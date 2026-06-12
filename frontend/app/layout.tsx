@@ -59,6 +59,8 @@ export const viewport: Viewport = {
   ],
 };
 
+import { CartProvider } from "@/components/CartProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -67,8 +69,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased min-h-screen flex flex-col`}>
-        <Navbar />
-        <main className="flex-1 flex flex-col">{children}</main>
+        <CartProvider>
+          <Navbar />
+          <main className="flex-1 flex flex-col">{children}</main>
+        </CartProvider>
       </body>
     </html>
   );

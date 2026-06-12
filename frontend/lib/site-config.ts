@@ -1,7 +1,7 @@
 export const siteConfig = {
-  name: "Business Foundation",
-  description: "A production-ready foundation for a modern business website.",
-  url: "https://example.com",
+  name: "Krushisarthi",
+  description: "Pure Natural Jaggery directly from the farm.",
+  url: "https://krushisarthi.com",
   ogImage: "https://example.com/og.jpg",
   links: {
     twitter: "https://twitter.com/example",
