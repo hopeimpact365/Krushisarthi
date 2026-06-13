@@ -1,17 +1,101 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartProvider";
 import { useToast } from "@/components/ToastProvider";
-import { CheckCircle2, Smartphone, MapPin, CreditCard, Tag, User, ShieldCheck } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  CheckCircle2,
+  CreditCard,
+  Loader2,
+  MapPin,
+  ShieldCheck,
+  ShoppingBag,
+  Smartphone,
+  User,
+} from "lucide-react";
+
+type DeliveryZone = "local" | "state" | "national";
+type PaymentMethod = "upi" | "card" | "netbanking";
+
+interface RazorpayPaymentResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
+interface RazorpayCheckoutOptions {
+  key: string;
+  amount: number;
+  currency: string;
+  name: string;
+  description: string;
+  order_id: string;
+  prefill: {
+    name: string;
+    email: string;
+    contact: string;
+  };
+  notes?: Record<string, string>;
+  theme?: {
+    color?: string;
+  };
+  modal?: {
+    ondismiss?: () => void;
+  };
+  handler?: (response: RazorpayPaymentResponse) => void | Promise<void>;
+}
+
+interface RazorpayCheckoutInstance {
+  open: () => void;
+}
+
+const RAZORPAY_SCRIPT_ID = "razorpay-checkout-script";
+
+const loadRazorpayScript = () => {
+  if (typeof window === "undefined") {
+    return Promise.resolve(false);
+  }
+
+  const existingWindow = window as Window & {
+    Razorpay?: new (options: RazorpayCheckoutOptions) => RazorpayCheckoutInstance;
+  };
+
+  if (existingWindow.Razorpay) {
+    return Promise.resolve(true);
+  }
+
+  const existingScript = document.getElementById(RAZORPAY_SCRIPT_ID) as HTMLScriptElement | null;
+  if (existingScript) {
+    return new Promise<boolean>((resolve) => {
+      if (existingWindow.Razorpay) {
+        resolve(true);
+        return;
+      }
+
+      existingScript.addEventListener("load", () => resolve(true), { once: true });
+      existingScript.addEventListener("error", () => resolve(false), { once: true });
+    });
+  }
+
+  return new Promise<boolean>((resolve) => {
+    const script = document.createElement("script");
+    script.id = RAZORPAY_SCRIPT_ID;
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, getSubtotal, updateOrderDetails } = useCart();
   const { showToast } = useToast();
 
-  // All state
   const [mobile, setMobile] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -19,20 +103,40 @@ export default function CheckoutPage() {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [pincode, setPincode] = useState("");
-  const [deliveryZone, setDeliveryZone] = useState<"local" | "state" | "national">("local");
+  const [deliveryZone, setDeliveryZone] = useState<DeliveryZone>("local");
   const [couponCode, setCouponCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [couponMessage, setCouponMessage] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("upi");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("upi");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [gatewayReady, setGatewayReady] = useState(false);
+  const [gatewayError, setGatewayError] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<"idle" | "success" | "failed">("idle");
 
   const subtotal = getSubtotal();
   const gst = subtotal * 0.05;
   const deliveryFee = deliveryZone === "local" ? 50 : deliveryZone === "state" ? 100 : 200;
   const total = Math.max(0, subtotal + gst + deliveryFee - discount);
 
-  // Auto-resolve delivery zone on location details change
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
+
+  useEffect(() => {
+    let mounted = true;
+
+    loadRazorpayScript().then((loaded) => {
+      if (mounted) {
+        setGatewayReady(loaded);
+        setGatewayError(loaded ? null : "Razorpay checkout failed to load.");
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   useEffect(() => {
     const cityClean = city.trim().toLowerCase();
     const stateClean = state.trim().toLowerCase();
@@ -40,7 +144,7 @@ export default function CheckoutPage() {
 
     if (pincodeClean.length === 6) {
       const isKop = pincodeClean.startsWith("416");
-      const isMH = ["40", "41", "42", "43", "44"].some(prefix => pincodeClean.startsWith(prefix)) && !pincodeClean.startsWith("403");
+      const isMH = ["40", "41", "42", "43", "44"].some((prefix) => pincodeClean.startsWith(prefix)) && !pincodeClean.startsWith("403");
 
       if (isKop) {
         setDeliveryZone("local");
@@ -49,20 +153,20 @@ export default function CheckoutPage() {
       } else {
         setDeliveryZone("national");
       }
-    } else {
-      // Fallback to text fields if pincode is not fully entered
-      const isKolhapur = cityClean.includes("kolhapur");
-      const isMaharashtra = stateClean.includes("maharashtra") || stateClean === "mh";
+      return;
+    }
 
-      if (isKolhapur) {
-        setDeliveryZone("local");
-      } else if (isMaharashtra) {
-        setDeliveryZone("state");
-      } else if (cityClean || stateClean || pincodeClean) {
-        setDeliveryZone("national");
-      } else {
-        setDeliveryZone("local"); // default fallback
-      }
+    const isKolhapur = cityClean.includes("kolhapur");
+    const isMaharashtra = stateClean.includes("maharashtra") || stateClean === "mh";
+
+    if (isKolhapur) {
+      setDeliveryZone("local");
+    } else if (isMaharashtra) {
+      setDeliveryZone("state");
+    } else if (cityClean || stateClean || pincodeClean) {
+      setDeliveryZone("national");
+    } else {
+      setDeliveryZone("local");
     }
   }, [city, state, pincode]);
 
@@ -72,7 +176,7 @@ export default function CheckoutPage() {
 
     if (digits.length === 6) {
       const isKop = digits.startsWith("416");
-      const isMH = ["40", "41", "42", "43", "44"].some(prefix => digits.startsWith(prefix)) && !digits.startsWith("403");
+      const isMH = ["40", "41", "42", "43", "44"].some((prefix) => digits.startsWith(prefix)) && !digits.startsWith("403");
 
       if (isKop) {
         setState("Maharashtra");
@@ -80,15 +184,14 @@ export default function CheckoutPage() {
       } else if (isMH) {
         setState("Maharashtra");
         if (city.toLowerCase() === "kolhapur") {
-          setCity(""); // Clear Kolhapur if they enter a non-Kolhapur MH pincode
+          setCity("");
         }
       } else {
-        // Pincode is outside Maharashtra
         if (state.toLowerCase() === "maharashtra") {
-          setState(""); // Clear Maharashtra if they enter an out-of-state pincode
+          setState("");
         }
         if (city.toLowerCase() === "kolhapur" || city.toLowerCase() === "pune") {
-          setCity(""); // Clear MH cities
+          setCity("");
         }
       }
     }
@@ -96,6 +199,7 @@ export default function CheckoutPage() {
 
   const handleApplyCoupon = () => {
     const code = couponCode.toUpperCase();
+
     if (code === "SALES10") {
       setDiscount(100);
       setCouponMessage("₹100 discount applied!");
@@ -112,7 +216,13 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
+    if (!gatewayReady || !razorpayKeyId) {
+      showToast("Razorpay checkout is not ready yet. Please try again in a moment.", "error");
+      return;
+    }
+
     setIsProcessing(true);
+    setPaymentStatus("idle");
 
     const orderData = {
       name,
@@ -130,12 +240,11 @@ export default function CheckoutPage() {
       discount,
       total,
       couponCode,
-      paymentMethod
+      paymentMethod,
     };
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-      const response = await fetch(`${apiUrl}/api/orders`, {
+      const orderResponse = await fetch(`${apiUrl}/api/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -143,31 +252,134 @@ export default function CheckoutPage() {
         body: JSON.stringify(orderData),
       });
 
-      const data = await response.json();
+      const orderResult = await orderResponse.json();
 
-      if (response.ok && data.success) {
-        updateOrderDetails({
-          mobile,
+      if (!orderResponse.ok || !orderResult.success) {
+        throw new Error(orderResult.message || "Something went wrong while placing the order.");
+      }
+
+      const savedOrderId = orderResult.orderId || orderResult.order?.orderId;
+
+      if (!savedOrderId) {
+        throw new Error("Order was created but the order ID was not returned.");
+      }
+
+      updateOrderDetails({
+        mobile,
+        name,
+        email,
+        address,
+        city,
+        state,
+        pincode,
+        deliveryZone,
+        coupon: couponCode,
+        paymentMethod,
+        orderId: savedOrderId,
+      });
+
+      const paymentResponse = await fetch(`${apiUrl}/api/payments/order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          orderId: savedOrderId,
+          currency: "INR",
+        }),
+      });
+
+      const paymentResult = await paymentResponse.json();
+
+      if (!paymentResponse.ok || !paymentResult.success) {
+        throw new Error(paymentResult.message || "Unable to initialize Razorpay checkout.");
+      }
+
+      const razorpayWindow = window as Window & {
+        Razorpay?: new (options: RazorpayCheckoutOptions) => RazorpayCheckoutInstance;
+      };
+
+      const RazorpayConstructor = razorpayWindow.Razorpay;
+      if (!RazorpayConstructor) {
+        throw new Error("Razorpay checkout is unavailable.");
+      }
+
+      const paymentCompleted = { current: false };
+
+      const razorpay = new RazorpayConstructor({
+        key: paymentResult.keyId || razorpayKeyId,
+        amount: paymentResult.amount,
+        currency: paymentResult.currency || "INR",
+        name: "Krushisarthi Farm Store",
+        description: `Order ${savedOrderId}`,
+        order_id: paymentResult.razorpayOrderId,
+        prefill: {
           name,
           email,
-          address,
-          city,
-          state,
-          pincode,
-          deliveryZone,
-          coupon: couponCode,
+          contact: mobile,
+        },
+        notes: {
+          orderId: savedOrderId,
           paymentMethod,
-          orderId: data.orderId
-        });
-        window.location.href = data.paymentUrl;
-      } else {
-        showToast(data.message || "Something went wrong while placing the order.", "error");
-        setIsProcessing(false);
-      }
+        },
+        theme: {
+          color: "#f59e0b",
+        },
+        modal: {
+          ondismiss: () => {
+            if (!paymentCompleted.current) {
+              setIsProcessing(false);
+              setPaymentStatus("failed");
+              showToast("Payment was closed before completion.", "error");
+              setTimeout(() => setPaymentStatus("idle"), 2000);
+            }
+          },
+        },
+        handler: async (response) => {
+          try {
+            const verifyResponse = await fetch(`${apiUrl}/api/payments/verify`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                orderId: savedOrderId,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyResult = await verifyResponse.json();
+
+            if (!verifyResponse.ok || !verifyResult.success) {
+              throw new Error(verifyResult.message || "Payment verification failed.");
+            }
+
+            paymentCompleted.current = true;
+            setIsProcessing(false);
+            setPaymentStatus("success");
+
+            setTimeout(() => {
+              router.push(`/confirmation?orderId=${savedOrderId}`);
+            }, 1500);
+          } catch (error) {
+            const message = error instanceof Error ? error.message : "Error verifying payment.";
+            setIsProcessing(false);
+            setPaymentStatus("failed");
+            showToast(message, "error");
+            setTimeout(() => setPaymentStatus("idle"), 2500);
+          }
+        },
+      });
+
+      razorpay.open();
     } catch (error) {
-      console.error("Order submission error:", error);
-      showToast("Failed to connect to the server. Please try again later.", "error");
+      const message = error instanceof Error ? error.message : "Failed to start Razorpay checkout.";
       setIsProcessing(false);
+      setPaymentStatus("failed");
+      showToast(message, "error");
+      setTimeout(() => setPaymentStatus("idle"), 2500);
     }
   };
 
@@ -175,26 +387,25 @@ export default function CheckoutPage() {
   const isPincodeValid = /^\d{6}$/.test(pincode);
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const isFormValid = 
-    isMobileValid && 
-    isEmailValid && 
-    name.trim().length > 0 && 
-    address.trim().length > 0 && 
-    city.trim().length > 0 && 
-    state.trim().length > 0 && 
-    isPincodeValid && 
+  const isFormValid =
+    isMobileValid &&
+    isEmailValid &&
+    name.trim().length > 0 &&
+    address.trim().length > 0 &&
+    city.trim().length > 0 &&
+    state.trim().length > 0 &&
+    isPincodeValid &&
     termsAccepted;
 
   return (
     <div className="min-h-screen bg-background pb-12">
       <div className="max-w-6xl mx-auto w-full px-4 flex flex-col lg:flex-row gap-12 pt-12">
-        {/* Left Side: Information */}
         <div className="flex-1 space-y-8 lg:pr-8">
           <div>
             <h1 className="text-3xl font-bold mb-2">Checkout</h1>
             <p className="text-muted-foreground flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-green-600" />
-              Secure 256-bit SSL encrypted payment.
+              Secure payment powered by Razorpay.
             </p>
           </div>
 
@@ -206,15 +417,34 @@ export default function CheckoutPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium">Full Name</label>
-                <input type="text" className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. John Doe" />
+                <input
+                  type="text"
+                  className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. John Doe"
+                />
               </div>
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium">Email Address</label>
-                <input type="email" className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="john@example.com" />
+                <input
+                  type="email"
+                  className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="john@example.com"
+                />
               </div>
               <div className="flex flex-col gap-2 md:col-span-2">
                 <label className="text-sm font-medium">Mobile Number</label>
-                <input type="tel" maxLength={10} className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all" value={mobile} onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))} placeholder="10-digit mobile number" />
+                <input
+                  type="tel"
+                  maxLength={10}
+                  className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                  value={mobile}
+                  onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))}
+                  placeholder="10-digit mobile number"
+                />
               </div>
             </div>
           </div>
@@ -227,20 +457,43 @@ export default function CheckoutPage() {
             <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
                 <label className="text-sm font-medium">Street Address</label>
-                <input type="text" className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="123 Farm Lane, Apt 4" />
+                <input
+                  type="text"
+                  className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="123 Farm Lane, Apt 4"
+                />
               </div>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium">City</label>
-                  <input type="text" className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all" value={city} onChange={(e) => setCity(e.target.value)} />
+                  <input
+                    type="text"
+                    className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                  />
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium">State</label>
-                  <input type="text" className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all" value={state} onChange={(e) => setState(e.target.value)} />
+                  <input
+                    type="text"
+                    className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                  />
                 </div>
                 <div className="flex flex-col gap-2 col-span-2 md:col-span-1">
                   <label className="text-sm font-medium">Pincode</label>
-                  <input type="text" maxLength={6} className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all" value={pincode} onChange={(e) => handlePincodeChange(e.target.value)} placeholder="6 digits" />
+                  <input
+                    type="text"
+                    maxLength={6}
+                    className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                    value={pincode}
+                    onChange={(e) => handlePincodeChange(e.target.value)}
+                    placeholder="6 digits"
+                  />
                 </div>
               </div>
             </div>
@@ -251,10 +504,21 @@ export default function CheckoutPage() {
                 {[
                   { id: "local", label: "Local (Same City)", fee: 50 },
                   { id: "state", label: "Within State", fee: 100 },
-                  { id: "national", label: "National (Out of state)", fee: 200 }
+                  { id: "national", label: "National (Out of state)", fee: 200 },
                 ].map((zone) => (
-                  <label key={zone.id} className={`flex items-center gap-3 p-4 border rounded-xl transition-all ${deliveryZone === zone.id ? "border-primary bg-primary/5 ring-1 ring-primary cursor-default" : "border-border bg-neutral-50/50 opacity-60 cursor-not-allowed"}`}>
-                    <input type="radio" name="deliveryZone" value={zone.id} checked={deliveryZone === zone.id} disabled={true} className="w-4 h-4 text-primary accent-primary cursor-not-allowed" readOnly />
+                  <label
+                    key={zone.id}
+                    className={`flex items-center gap-3 p-4 border rounded-xl transition-all ${deliveryZone === zone.id ? "border-primary bg-primary/5 ring-1 ring-primary cursor-default" : "border-border bg-neutral-50/50 opacity-60 cursor-not-allowed"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="deliveryZone"
+                      value={zone.id}
+                      checked={deliveryZone === zone.id}
+                      disabled={true}
+                      className="w-4 h-4 text-primary accent-primary cursor-not-allowed"
+                      readOnly
+                    />
                     <div>
                       <div className="font-medium text-sm">{zone.label}</div>
                       <div className="text-xs text-muted-foreground mt-0.5">₹{zone.fee}</div>
@@ -268,46 +532,87 @@ export default function CheckoutPage() {
           <div className="space-y-6">
             <h2 className="text-xl font-semibold flex items-center gap-2 border-b border-border pb-2">
               <CreditCard className="w-5 h-5 text-primary" />
-              Payment Method
+              Payment Preference
             </h2>
-            <div className="flex flex-col gap-3">
+            <div className="grid gap-3">
               {[
-                { id: "upi", label: "UPI Payment", desc: "GPay, PhonePe, Paytm" },
-                { id: "card", label: "Credit/Debit Card", desc: "Visa, Mastercard, RuPay" },
-                { id: "netbanking", label: "Net Banking", desc: "All major banks" }
-              ].map((method) => (
-                <label key={method.id} className={`flex items-start gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${paymentMethod === method.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:bg-secondary/50"}`}>
-                  <input type="radio" name="payment" value={method.id} checked={paymentMethod === method.id} onChange={(e) => setPaymentMethod(e.target.value)} className="w-5 h-5 mt-0.5 text-primary" />
-                  <div>
-                    <div className="font-medium text-base">{method.label}</div>
-                    <div className="text-sm text-muted-foreground mt-0.5">{method.desc}</div>
-                  </div>
-                </label>
-              ))}
+                { id: "upi", label: "UPI", desc: "Pay using GPay, PhonePe, Paytm, and other UPI apps", icon: Smartphone },
+                { id: "card", label: "Card", desc: "Credit and debit cards supported by Razorpay", icon: CreditCard },
+                { id: "netbanking", label: "Net Banking", desc: "Use major Indian banks through Razorpay", icon: ShieldCheck },
+              ].map((method) => {
+                const Icon = method.icon;
+
+                return (
+                  <label
+                    key={method.id}
+                    className={`flex items-start gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${paymentMethod === method.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:bg-secondary/50"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      value={method.id}
+                      checked={paymentMethod === method.id}
+                      onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
+                      className="w-5 h-5 mt-0.5 text-primary"
+                    />
+                    <Icon className="w-5 h-5 mt-0.5 text-primary shrink-0" />
+                    <div>
+                      <div className="font-medium text-base">{method.label}</div>
+                      <div className="text-sm text-muted-foreground mt-0.5">{method.desc}</div>
+                    </div>
+                  </label>
+                );
+              })}
             </div>
           </div>
 
           <div className="pt-4">
             <label className="flex items-start gap-3 p-4 bg-secondary/50 rounded-xl cursor-pointer border border-border">
-              <input type="checkbox" className="mt-1 w-5 h-5 text-primary" checked={termsAccepted} onChange={(e) => setTermsAccepted(e.target.checked)} />
+              <input
+                type="checkbox"
+                className="mt-1 w-5 h-5 text-primary"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+              />
               <span className="text-sm text-foreground font-medium leading-relaxed">
                 I agree to the terms and conditions and confirm that the address provided is correct.
               </span>
             </label>
           </div>
-
         </div>
 
-        {/* Right Side: Order Summary (Sticky) */}
         <div className="w-full lg:w-[400px] lg:sticky lg:top-24 h-max">
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-xl shadow-black/5">
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-xl shadow-black/5 relative overflow-hidden">
+            {isProcessing && (
+              <div className="absolute inset-0 z-20 bg-background/95 flex flex-col items-center justify-center gap-3 text-center p-6">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                <p className="text-sm font-medium text-muted-foreground">Opening Razorpay checkout...</p>
+              </div>
+            )}
+
+            {paymentStatus === "success" && (
+              <div className="absolute inset-0 z-20 bg-background/95 flex flex-col items-center justify-center gap-3 text-center p-6">
+                <CheckCircle2 className="w-12 h-12 text-green-600" />
+                <p className="text-sm font-semibold text-foreground">Payment verified. Redirecting to confirmation.</p>
+              </div>
+            )}
+
+            {paymentStatus === "failed" && (
+              <div className="absolute inset-0 z-20 bg-background/95 flex flex-col items-center justify-center gap-3 text-center p-6">
+                <AlertCircle className="w-12 h-12 text-destructive" />
+                <p className="text-sm font-semibold text-foreground">Payment could not be completed.</p>
+              </div>
+            )}
+
             <h2 className="text-xl font-bold mb-6 flex items-center justify-between">
               Order Summary
-              <span className="text-sm font-normal text-muted-foreground bg-secondary px-2 py-1 rounded-md">{items.filter(i => i.quantity > 0).length} items</span>
+              <span className="text-sm font-normal text-muted-foreground bg-secondary px-2 py-1 rounded-md">
+                {items.filter((item) => item.quantity > 0).length} items
+              </span>
             </h2>
 
             <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2">
-              {items.filter(item => item.quantity > 0).map((item) => (
+              {items.filter((item) => item.quantity > 0).map((item) => (
                 <div key={item.id} className="flex items-center gap-4">
                   <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-border shrink-0 bg-secondary">
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
@@ -319,17 +624,23 @@ export default function CheckoutPage() {
                     <h4 className="font-medium text-sm truncate">{item.name}</h4>
                     <p className="text-xs text-muted-foreground">{item.quantity} kg @ ₹{item.price}/kg</p>
                   </div>
-                  <div className="font-medium text-sm">
-                    ₹{(item.quantity * item.price).toFixed(2)}
-                  </div>
+                  <div className="font-medium text-sm">₹{(item.quantity * item.price).toFixed(2)}</div>
                 </div>
               ))}
             </div>
 
             <div className="border-t border-border pt-6 mb-6">
               <div className="flex gap-2">
-                <input type="text" placeholder="Discount code" className="flex-1 px-4 py-3 border border-border rounded-xl bg-input-background uppercase text-sm focus:ring-2 focus:ring-primary focus:outline-none transition-all" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} />
-                <button onClick={handleApplyCoupon} className="px-6 py-3 bg-secondary text-secondary-foreground rounded-xl font-medium hover:bg-stone-200 transition-colors">Apply</button>
+                <input
+                  type="text"
+                  placeholder="Discount code"
+                  className="flex-1 px-4 py-3 border border-border rounded-xl bg-input-background uppercase text-sm focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                />
+                <button onClick={handleApplyCoupon} className="px-6 py-3 bg-secondary text-secondary-foreground rounded-xl font-medium hover:bg-stone-200 transition-colors">
+                  Apply
+                </button>
               </div>
               {couponMessage && (
                 <p className={`mt-2 text-sm font-medium ${discount > 0 ? "text-green-600" : "text-destructive"}`}>
@@ -363,18 +674,34 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            <button
-              onClick={handlePlaceOrder}
-              disabled={isProcessing || !isFormValid}
-              className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-lg hover:bg-amber-950 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
-            >
-              {isProcessing ? "Processing..." : `Pay ₹${total.toFixed(2)}`}
-            </button>
-            {!isFormValid && (
-              <p className="text-center text-xs text-muted-foreground mt-4">
-                Please fill in all required fields correctly (10-digit mobile, valid email, 6-digit pincode) and accept the terms to proceed.
+            <div className="space-y-3">
+              <button
+                onClick={handlePlaceOrder}
+                disabled={isProcessing || !isFormValid || !gatewayReady}
+                className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-lg hover:bg-amber-950 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                {isProcessing ? "Processing..." : `Pay ₹${total.toFixed(2)} with Razorpay`}
+                {!isProcessing && <ArrowRight className="w-5 h-5" />}
+              </button>
+
+              {gatewayError ? (
+                <p className="text-center text-xs text-destructive">{gatewayError}</p>
+              ) : !gatewayReady ? (
+                <p className="text-center text-xs text-muted-foreground">Loading Razorpay checkout...</p>
+              ) : null}
+
+              {!isFormValid && (
+                <p className="text-center text-xs text-muted-foreground">
+                  Please fill in all required fields correctly (10-digit mobile, valid email, 6-digit pincode) and accept the terms to proceed.
+                </p>
+              )}
+
+              <p className="text-center text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+                <ShieldCheck className="w-4 h-4" />
+                Your payment is encrypted and verified before confirmation.
               </p>
-            )}
+            </div>
           </div>
         </div>
       </div>
