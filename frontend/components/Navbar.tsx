@@ -25,6 +25,9 @@ export function Navbar() {
           <Link href="/my-farm" className="text-sm font-medium hover:text-primary transition-colors">
             My Farm
           </Link>
+          <Link href="/track" className="text-sm font-medium hover:text-primary transition-colors">
+            Track Order
+          </Link>
           <Link href="/select-products" className="relative flex items-center gap-2 bg-secondary text-secondary-foreground px-4 py-2 rounded-lg font-medium hover:bg-stone-200 transition-colors">
             <ShoppingCart className="w-5 h-5" />
             <span className="hidden sm:inline">Order Now</span>

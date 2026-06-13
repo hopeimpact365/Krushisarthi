@@ -6,6 +6,7 @@ import os from 'os';
 import mongoose from 'mongoose';
 import connectDB from './config/db.js';
 import ordersRouter from './routes/orders.js';
+import adminRouter from './routes/admin.js';
 import { getStatusHtml } from './views/statusHtml.js';
 
 // Load environment variables
@@ -22,6 +23,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/orders', ordersRouter);
+app.use('/api/admin', adminRouter);
 
 // Helper: format bytes to human-readable string
 const formatBytes = (bytes) => {

@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/components/CartProvider";
+import { useToast } from "@/components/ToastProvider";
 import { CheckCircle2, Smartphone, MapPin, CreditCard, Tag, User, ShieldCheck } from "lucide-react";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, getSubtotal, updateOrderDetails } = useCart();
+  const { showToast } = useToast();
 
   // All state
   const [mobile, setMobile] = useState("");
@@ -29,6 +31,68 @@ export default function CheckoutPage() {
   const gst = subtotal * 0.05;
   const deliveryFee = deliveryZone === "local" ? 50 : deliveryZone === "state" ? 100 : 200;
   const total = Math.max(0, subtotal + gst + deliveryFee - discount);
+
+  // Auto-resolve delivery zone on location details change
+  useEffect(() => {
+    const cityClean = city.trim().toLowerCase();
+    const stateClean = state.trim().toLowerCase();
+    const pincodeClean = pincode.trim();
+
+    if (pincodeClean.length === 6) {
+      const isKop = pincodeClean.startsWith("416");
+      const isMH = ["40", "41", "42", "43", "44"].some(prefix => pincodeClean.startsWith(prefix)) && !pincodeClean.startsWith("403");
+
+      if (isKop) {
+        setDeliveryZone("local");
+      } else if (isMH) {
+        setDeliveryZone("state");
+      } else {
+        setDeliveryZone("national");
+      }
+    } else {
+      // Fallback to text fields if pincode is not fully entered
+      const isKolhapur = cityClean.includes("kolhapur");
+      const isMaharashtra = stateClean.includes("maharashtra") || stateClean === "mh";
+
+      if (isKolhapur) {
+        setDeliveryZone("local");
+      } else if (isMaharashtra) {
+        setDeliveryZone("state");
+      } else if (cityClean || stateClean || pincodeClean) {
+        setDeliveryZone("national");
+      } else {
+        setDeliveryZone("local"); // default fallback
+      }
+    }
+  }, [city, state, pincode]);
+
+  const handlePincodeChange = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    setPincode(digits);
+
+    if (digits.length === 6) {
+      const isKop = digits.startsWith("416");
+      const isMH = ["40", "41", "42", "43", "44"].some(prefix => digits.startsWith(prefix)) && !digits.startsWith("403");
+
+      if (isKop) {
+        setState("Maharashtra");
+        setCity("Kolhapur");
+      } else if (isMH) {
+        setState("Maharashtra");
+        if (city.toLowerCase() === "kolhapur") {
+          setCity(""); // Clear Kolhapur if they enter a non-Kolhapur MH pincode
+        }
+      } else {
+        // Pincode is outside Maharashtra
+        if (state.toLowerCase() === "maharashtra") {
+          setState(""); // Clear Maharashtra if they enter an out-of-state pincode
+        }
+        if (city.toLowerCase() === "kolhapur" || city.toLowerCase() === "pune") {
+          setCity(""); // Clear MH cities
+        }
+      }
+    }
+  };
 
   const handleApplyCoupon = () => {
     const code = couponCode.toUpperCase();
@@ -97,12 +161,12 @@ export default function CheckoutPage() {
         });
         window.location.href = data.paymentUrl;
       } else {
-        alert(data.message || "Something went wrong while placing the order.");
+        showToast(data.message || "Something went wrong while placing the order.", "error");
         setIsProcessing(false);
       }
     } catch (error) {
       console.error("Order submission error:", error);
-      alert("Failed to connect to the server. Please try again later.");
+      showToast("Failed to connect to the server. Please try again later.", "error");
       setIsProcessing(false);
     }
   };
@@ -176,7 +240,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex flex-col gap-2 col-span-2 md:col-span-1">
                   <label className="text-sm font-medium">Pincode</label>
-                  <input type="text" maxLength={6} className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all" value={pincode} onChange={(e) => setPincode(e.target.value.replace(/\D/g, ""))} placeholder="6 digits" />
+                  <input type="text" maxLength={6} className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all" value={pincode} onChange={(e) => handlePincodeChange(e.target.value)} placeholder="6 digits" />
                 </div>
               </div>
             </div>
@@ -189,8 +253,8 @@ export default function CheckoutPage() {
                   { id: "state", label: "Within State", fee: 100 },
                   { id: "national", label: "National (Out of state)", fee: 200 }
                 ].map((zone) => (
-                  <label key={zone.id} className={`flex items-center gap-3 p-4 border rounded-xl cursor-pointer transition-colors ${deliveryZone === zone.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:bg-secondary/50"}`}>
-                    <input type="radio" name="deliveryZone" value={zone.id} checked={deliveryZone === zone.id} onChange={(e) => setDeliveryZone(e.target.value as any)} className="w-4 h-4 text-primary" />
+                  <label key={zone.id} className={`flex items-center gap-3 p-4 border rounded-xl transition-all ${deliveryZone === zone.id ? "border-primary bg-primary/5 ring-1 ring-primary cursor-default" : "border-border bg-neutral-50/50 opacity-60 cursor-not-allowed"}`}>
+                    <input type="radio" name="deliveryZone" value={zone.id} checked={deliveryZone === zone.id} disabled={true} className="w-4 h-4 text-primary accent-primary cursor-not-allowed" readOnly />
                     <div>
                       <div className="font-medium text-sm">{zone.label}</div>
                       <div className="text-xs text-muted-foreground mt-0.5">₹{zone.fee}</div>

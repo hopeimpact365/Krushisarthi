@@ -60,6 +60,8 @@ export const viewport: Viewport = {
 };
 
 import { CartProvider } from "@/components/CartProvider";
+import { ToastProvider } from "@/components/ToastProvider";
+import { PageTransition } from "@/components/PageTransition";
 
 export default function RootLayout({
   children,
@@ -69,10 +71,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased min-h-screen flex flex-col`}>
-        <CartProvider>
-          <Navbar />
-          <main className="flex-1 flex flex-col">{children}</main>
-        </CartProvider>
+        <ToastProvider>
+          <CartProvider>
+            <Navbar />
+            <main className="flex-1 flex flex-col">
+              <PageTransition>{children}</PageTransition>
+            </main>
+          </CartProvider>
+        </ToastProvider>
       </body>
     </html>
   );

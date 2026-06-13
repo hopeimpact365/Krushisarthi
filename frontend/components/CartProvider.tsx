@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export type ProductId = "bar" | "cube" | "powder";
 
@@ -48,6 +48,52 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>(defaultItems);
   const [orderDetails, setOrderDetails] = useState<OrderDetails>({});
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    try {
+      const savedItems = localStorage.getItem("krushisarthi_cart_items");
+      if (savedItems) {
+        const parsed = JSON.parse(savedItems);
+        // Ensure structure is correct and merges with defaultItems properties (e.g., matching IDs and images)
+        const merged = defaultItems.map(defaultItem => {
+          const found = parsed.find((item: any) => item.id === defaultItem.id);
+          return found ? { ...defaultItem, quantity: found.quantity } : defaultItem;
+        });
+        setItems(merged);
+      }
+
+      const savedDetails = localStorage.getItem("krushisarthi_order_details");
+      if (savedDetails) {
+        setOrderDetails(JSON.parse(savedDetails));
+      }
+    } catch (error) {
+      console.error("Failed to load cart from localStorage:", error);
+    } finally {
+      setIsInitialized(true);
+    }
+  }, []);
+
+  // Save items to localStorage when they change
+  useEffect(() => {
+    if (!isInitialized) return;
+    try {
+      localStorage.setItem("krushisarthi_cart_items", JSON.stringify(items));
+    } catch (error) {
+      console.error("Failed to save cart items to localStorage:", error);
+    }
+  }, [items, isInitialized]);
+
+  // Save orderDetails to localStorage when they change
+  useEffect(() => {
+    if (!isInitialized) return;
+    try {
+      localStorage.setItem("krushisarthi_order_details", JSON.stringify(orderDetails));
+    } catch (error) {
+      console.error("Failed to save order details to localStorage:", error);
+    }
+  }, [orderDetails, isInitialized]);
 
   const updateQuantity = (id: ProductId, qty: number) => {
     setItems((prev) =>
@@ -65,6 +111,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = () => {
     setItems(defaultItems);
     setOrderDetails({});
+    try {
+      localStorage.removeItem("krushisarthi_cart_items");
+      localStorage.removeItem("krushisarthi_order_details");
+    } catch (error) {
+      console.error("Failed to clear localStorage:", error);
+    }
   };
 
   return (

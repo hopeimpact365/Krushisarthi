@@ -1,21 +1,25 @@
 import express from 'express';
 import Order from '../models/Order.js';
+import { adminAuth } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Helper: generate unique order ID (looks like JGY123456)
+// Helper: generate unique sequential order ID (looks like KS-0001, KS-0002)
 const generateOrderId = async () => {
+  const count = await Order.countDocuments();
+  let nextNum = count + 1;
   let isUnique = false;
   let orderId = '';
   
   while (!isUnique) {
-    const randomNum = Math.floor(100000 + Math.random() * 900000); // 6-digit number
-    orderId = `JGY${randomNum}`;
+    orderId = `KS-${String(nextNum).padStart(4, '0')}`;
     
     // Check if ID already exists in DB
     const existingOrder = await Order.findOne({ orderId });
     if (!existingOrder) {
       isUnique = true;
+    } else {
+      nextNum++;
     }
   }
   
@@ -99,48 +103,71 @@ router.post('/', async (req, res) => {
     
     console.log(`📦 Order created successfully: ${orderId} by ${name}`);
 
-    // Call EasyPay Gateway if user_token is set
-    const userToken = process.env.EASYPAY_USER_TOKEN;
+    // Call Easebuzz Gateway if EASEBUZZ_API_KEY is set
+    const easebuzzApiKey = process.env.EASEBUZZ_API_KEY;
+    const easebuzzEnv = process.env.EASEBUZZ_ENV || 'development';
+    const easebuzzBaseUrl = easebuzzEnv === 'production' ? 'https://apps.easebuzz.in' : 'https://devapps.easebuzz.in';
     let paymentUrl = '';
 
-    if (userToken) {
+    if (easebuzzApiKey) {
       try {
-        const redirectUrl = `http://localhost:3000/payment/easypay/callback?orderId=${orderId}`;
-        const gatewayRes = await fetch('https://merchant.easypaygateway.in/api/create-order', {
+        const payload = {
+          api_key: easebuzzApiKey,
+          invoice: {
+            contact: {
+              name: name,
+              email: email,
+              phone: mobile,
+              mobile: mobile,
+              address: address,
+              city: city,
+              state: state,
+              pincode: pincode,
+              country: 'India',
+              address_type: 'billing'
+            },
+            items: activeItems.map(item => ({
+              name: item.name,
+              description: item.name,
+              amount: Number(item.price),
+              quantity: Number(item.quantity)
+            })),
+            notes: `Order ${orderId} from Krushisarthi`
+          }
+        };
+
+        const gatewayRes = await fetch(`${easebuzzBaseUrl}/api/v1/invoices/`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${easebuzzApiKey}`
           },
-          body: new URLSearchParams({
-            customer_mobile: mobile,
-            user_token: userToken,
-            amount: total.toString(),
-            order_id: orderId,
-            redirect_url: redirectUrl,
-            route: '1'
-          })
+          body: JSON.stringify(payload)
         });
 
         const gatewayData = await gatewayRes.json();
         
-        if (gatewayRes.ok && gatewayData.status) {
-          if (gatewayData.result && gatewayData.result.payment_url) {
-            paymentUrl = gatewayData.result.payment_url;
-          } else if (gatewayData.data && gatewayData.data.payment_url) {
-            paymentUrl = gatewayData.data.payment_url;
+        if (gatewayRes.ok && (gatewayData.status === 1 || gatewayData.success || gatewayData.status === 'success')) {
+          const invoiceData = gatewayData.data || gatewayData.invoice || gatewayData;
+          paymentUrl = invoiceData.payment_link || invoiceData.invoice_url || invoiceData.payment_url;
+          const invoiceUid = invoiceData.uid || invoiceData.invoice_id || invoiceData.id;
+          
+          if (invoiceUid) {
+            savedOrder.easebuzzInvoiceId = invoiceUid;
+            await savedOrder.save();
           }
-          console.log(`🔗 EasyPay Gateway initialized successfully for ${orderId}: ${paymentUrl}`);
+          console.log(`🔗 Easebuzz SmartBilling initialized successfully for ${orderId}: ${paymentUrl}`);
         } else {
-          console.error(`⚠️ EasyPay Gateway API error: ${gatewayData.message || 'Unknown error'}`);
+          console.error(`⚠️ Easebuzz API error: ${JSON.stringify(gatewayData)}`);
         }
       } catch (err) {
-        console.error(`❌ EasyPay Gateway connection failed: ${err.message}`);
+        console.error(`❌ Easebuzz connection failed: ${err.message}`);
       }
     }
 
-    // Fallback to mock gateway URL if no token or API call failed
+    // Fallback to mock gateway URL if no api key or API call failed
     if (!paymentUrl) {
-      paymentUrl = `http://localhost:3000/payment/easypay?orderId=${orderId}`;
+      paymentUrl = `http://localhost:3000/payment/easebuzz?orderId=${orderId}`;
     }
 
     res.status(201).json({
@@ -162,8 +189,8 @@ router.post('/', async (req, res) => {
 
 // @route   GET /api/orders
 // @desc    Get all orders (for admin/monitoring)
-// @access  Public (should be protected in production)
-router.get('/', async (req, res) => {
+// @access  Private
+router.get('/', adminAuth, async (req, res) => {
   try {
     const orders = await Order.find().sort({ createdAt: -1 });
     res.status(200).json({
@@ -208,7 +235,7 @@ router.get('/:orderId', async (req, res) => {
 });
 
 // @route   POST /api/orders/:orderId/pay
-// @desc    Process simulated Easy Pay payment
+// @desc    Process simulated Easebuzz payment
 // @access  Public
 router.post('/:orderId/pay', async (req, res) => {
   try {
@@ -265,49 +292,48 @@ router.get('/:orderId/verify-payment', async (req, res) => {
       });
     }
 
-    const userToken = process.env.EASYPAY_USER_TOKEN;
+    const easebuzzApiKey = process.env.EASEBUZZ_API_KEY;
 
-    // If no real token, fallback to returning current DB status
-    if (!userToken) {
+    // If no real token/key, fallback to returning current DB status
+    if (!easebuzzApiKey || !order.easebuzzInvoiceId) {
       return res.status(200).json({
         success: true,
-        message: "No user token configured. Returning current/mock payment status.",
+        message: "No active Easebuzz gateway API key or invoice ID configured. Returning current/mock payment status.",
         paymentStatus: order.paymentStatus,
         order
       });
     }
 
-    // Call check-order-status API
+    // Call Easebuzz SmartBilling invoice status API
     try {
-      const gatewayRes = await fetch('https://merchant.easypaygateway.in/api/check-order-status', {
-        method: 'POST',
+      const easebuzzEnv = process.env.EASEBUZZ_ENV || 'development';
+      const easebuzzBaseUrl = easebuzzEnv === 'production' ? 'https://apps.easebuzz.in' : 'https://devapps.easebuzz.in';
+      
+      const gatewayRes = await fetch(`${easebuzzBaseUrl}/api/v1/invoices/${order.easebuzzInvoiceId}/`, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: new URLSearchParams({
-          user_token: userToken,
-          order_id: order.orderId
-        })
+          'Authorization': `Bearer ${easebuzzApiKey}`
+        }
       });
 
       const gatewayData = await gatewayRes.json();
-      console.log(`🔍 EasyPay Status response for ${order.orderId}:`, gatewayData);
+      console.log(`🔍 Easebuzz Status response for ${order.orderId}:`, gatewayData);
 
-      if (gatewayRes.ok && gatewayData.status) {
-        const result = gatewayData.result;
-        if (result) {
-          const statusVal = String(result.status || result.transaction_status || result.payment_status).toLowerCase();
+      if (gatewayRes.ok) {
+        const invoiceData = gatewayData.data || gatewayData.invoice || gatewayData;
+        if (invoiceData) {
+          const statusVal = String(invoiceData.status || invoiceData.payment_status || '').toLowerCase();
           
-          if (statusVal === 'success' || statusVal === 'successful' || statusVal === 'paid' || statusVal === '1') {
+          if (['paid', 'success', 'successful', 'completed', 'active', '1'].includes(statusVal)) {
             order.paymentStatus = 'paid';
-          } else if (statusVal === 'failed' || statusVal === 'failure' || statusVal === '0') {
+          } else if (['failed', 'failure', 'cancelled', 'expired', '0'].includes(statusVal)) {
             order.paymentStatus = 'failed';
           }
           await order.save();
         }
       }
     } catch (err) {
-      console.error(`❌ EasyPay status check failed: ${err.message}`);
+      console.error(`❌ Easebuzz status check failed: ${err.message}`);
     }
 
     res.status(200).json({
@@ -320,6 +346,37 @@ router.get('/:orderId/verify-payment', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error verifying payment.',
+      error: error.message
+    });
+  }
+});
+
+// @route   DELETE /api/orders
+// @desc    Delete multiple orders
+// @access  Private
+router.delete('/', adminAuth, async (req, res) => {
+  try {
+    const { orderIds } = req.body;
+    if (!orderIds || !Array.isArray(orderIds) || !orderIds.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide an array of orderIds to delete.'
+      });
+    }
+
+    const result = await Order.deleteMany({ orderId: { $in: orderIds } });
+    console.log(`🗑️ Deleted ${result.deletedCount} orders: ${JSON.stringify(orderIds)}`);
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully deleted ${result.deletedCount} orders.`,
+      deletedCount: result.deletedCount
+    });
+  } catch (error) {
+    console.error(`❌ Error deleting orders: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Server error deleting orders.',
       error: error.message
     });
   }

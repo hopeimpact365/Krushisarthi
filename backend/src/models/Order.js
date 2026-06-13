@@ -115,6 +115,10 @@ const OrderSchema = new mongoose.Schema({
     type: String,
     enum: ['received', 'processing', 'shipped', 'delivered', 'cancelled'],
     default: 'received'
+  },
+  easebuzzInvoiceId: {
+    type: String,
+    trim: true
   }
 }, {
   timestamps: true

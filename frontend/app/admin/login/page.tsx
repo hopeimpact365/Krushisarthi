@@ -11,20 +11,35 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setIsSubmitting(true);
 
-    // Mock verification
-    setTimeout(() => {
-      if (email === "admin@krushisarthi.com" && password === "admin123") {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const response = await fetch(`${apiUrl}/api/admin/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        localStorage.setItem("admin_token", data.token);
+        localStorage.setItem("admin_user", JSON.stringify(data.admin));
         router.push("/admin/dashboard");
       } else {
-        setError("Invalid email address or password. Please try again.");
-        setIsSubmitting(false);
+        setError(data.message || "Invalid email address or password. Please try again.");
       }
-    }, 1000);
+    } catch (err) {
+      setError("Unable to connect to the backend. Please ensure the backend server is running.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -48,7 +63,7 @@ export default function AdminLoginPage() {
               type="email"
               required
               className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-foreground"
-              placeholder="e.g. admin@krushisarthi.com"
+              placeholder="e.g. admin1@krushisarthi.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
@@ -75,11 +90,11 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        {/* Mock Credentials Hint */}
+        {/* Credentials Hint */}
         <div className="mt-6 text-xs text-center text-muted-foreground border-t border-border pt-4">
-          <p className="font-semibold mb-1">Demo Credentials:</p>
-          <p>Email: <code className="bg-secondary px-1 py-0.5 rounded font-mono">admin@krushisarthi.com</code></p>
-          <p className="mt-0.5">Password: <code className="bg-secondary px-1 py-0.5 rounded font-mono">admin123</code></p>
+          <p className="font-semibold mb-1">Configured Credentials (from Backend .env):</p>
+          <p>Admin 1: <code className="bg-secondary px-1 py-0.5 rounded font-mono">admin1@krushisarthi.com</code> / <code className="bg-secondary px-1 py-0.5 rounded font-mono">admin1password123</code></p>
+          <p className="mt-1">Admin 2: <code className="bg-secondary px-1 py-0.5 rounded font-mono">admin2@krushisarthi.com</code> / <code className="bg-secondary px-1 py-0.5 rounded font-mono">admin2password456</code></p>
         </div>
 
         {/* Error Message */}
