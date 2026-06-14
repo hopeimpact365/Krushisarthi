@@ -2,6 +2,8 @@ import express from 'express';
 import crypto from 'crypto';
 import Order from '../models/Order.js';
 import { createRazorpayClient, getRazorpayKeyId } from '../config/razorpay.js';
+import { sendOrderConfirmationEmail } from '../config/resend.js';
+
 
 const router = express.Router();
 
@@ -148,6 +150,14 @@ router.post('/verify', async (req, res) => {
     order.razorpayPaymentId = razorpayPaymentId;
     order.razorpaySignature = razorpaySignature;
     await order.save();
+
+    // Send order confirmation email using Resend
+    try {
+      await sendOrderConfirmationEmail(order);
+    } catch (emailError) {
+      console.error(`❌ Non-blocking error sending order confirmation email: ${emailError.message}`);
+    }
+
 
     res.status(200).json({
       success: true,
