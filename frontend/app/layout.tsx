@@ -62,6 +62,7 @@ export const viewport: Viewport = {
 import { CartProvider } from "@/components/CartProvider";
 import { ToastProvider } from "@/components/ToastProvider";
 import { PageTransition } from "@/components/PageTransition";
+import { Footer } from "@/components/Footer";
 
 export default function RootLayout({
   children,
@@ -77,9 +78,11 @@ export default function RootLayout({
             <main className="flex-1 flex flex-col">
               <PageTransition>{children}</PageTransition>
             </main>
+            <Footer />
           </CartProvider>
         </ToastProvider>
       </body>
     </html>
   );
 }
+
