@@ -398,8 +398,8 @@ export default function CheckoutPage() {
     termsAccepted;
 
   return (
-    <div className="min-h-screen bg-background pb-12">
-      <div className="max-w-6xl mx-auto w-full px-4 flex flex-col lg:flex-row gap-12 pt-12">
+    <div className="min-h-screen bg-background pb-16">
+      <div className="max-w-6xl mx-auto w-full px-5 md:px-8 flex flex-col lg:flex-row gap-12 pt-12">
         <div className="flex-1 space-y-8 lg:pr-8">
           <div>
             <h1 className="text-3xl font-bold mb-2">Checkout</h1>
@@ -419,7 +419,7 @@ export default function CheckoutPage() {
                 <label className="text-sm font-medium">Full Name</label>
                 <input
                   type="text"
-                  className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                  className="px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. John Doe"
@@ -429,7 +429,7 @@ export default function CheckoutPage() {
                 <label className="text-sm font-medium">Email Address</label>
                 <input
                   type="email"
-                  className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                  className="px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="john@example.com"
@@ -440,7 +440,7 @@ export default function CheckoutPage() {
                 <input
                   type="tel"
                   maxLength={10}
-                  className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                  className="px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                   value={mobile}
                   onChange={(e) => setMobile(e.target.value.replace(/\D/g, ""))}
                   placeholder="10-digit mobile number"
@@ -459,7 +459,7 @@ export default function CheckoutPage() {
                 <label className="text-sm font-medium">Street Address</label>
                 <input
                   type="text"
-                  className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                  className="px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder="123 Farm Lane, Apt 4"
@@ -470,7 +470,7 @@ export default function CheckoutPage() {
                   <label className="text-sm font-medium">City</label>
                   <input
                     type="text"
-                    className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                    className="px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
                   />
@@ -479,7 +479,7 @@ export default function CheckoutPage() {
                   <label className="text-sm font-medium">State</label>
                   <input
                     type="text"
-                    className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                    className="px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                     value={state}
                     onChange={(e) => setState(e.target.value)}
                   />
@@ -489,7 +489,7 @@ export default function CheckoutPage() {
                   <input
                     type="text"
                     maxLength={6}
-                    className="px-4 py-3 border border-border rounded-lg bg-input-background focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                    className="px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                     value={pincode}
                     onChange={(e) => handlePincodeChange(e.target.value)}
                     placeholder="6 digits"
@@ -508,7 +508,7 @@ export default function CheckoutPage() {
                 ].map((zone) => (
                   <label
                     key={zone.id}
-                    className={`flex items-center gap-3 p-4 border rounded-xl transition-all ${deliveryZone === zone.id ? "border-primary bg-primary/5 ring-1 ring-primary cursor-default" : "border-border bg-neutral-50/50 opacity-60 cursor-not-allowed"}`}
+                    className={`flex items-center gap-3 p-4 border rounded-xl transition-all ${deliveryZone === zone.id ? "border-primary bg-primary/5 ring-1 ring-primary cursor-default" : "border-border bg-muted/20 opacity-65 cursor-not-allowed"}`}
                   >
                     <input
                       type="radio"
@@ -545,7 +545,7 @@ export default function CheckoutPage() {
                 return (
                   <label
                     key={method.id}
-                    className={`flex items-start gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${paymentMethod === method.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:bg-secondary/50"}`}
+                    className={`flex items-start gap-4 p-4 border rounded-xl cursor-pointer transition-colors ${paymentMethod === method.id ? "border-primary bg-primary/5 ring-1 ring-primary" : "border-border hover:bg-muted/40"}`}
                   >
                     <input
                       type="radio"
@@ -567,7 +567,7 @@ export default function CheckoutPage() {
           </div>
 
           <div className="pt-4">
-            <label className="flex items-start gap-3 p-4 bg-secondary/50 rounded-xl cursor-pointer border border-border">
+            <label className="flex items-start gap-3 p-4 bg-muted/40 rounded-xl cursor-pointer border border-border">
               <input
                 type="checkbox"
                 className="mt-1 w-5 h-5 text-primary"
@@ -606,7 +606,7 @@ export default function CheckoutPage() {
 
             <h2 className="text-xl font-bold mb-6 flex items-center justify-between">
               Order Summary
-              <span className="text-sm font-normal text-muted-foreground bg-secondary px-2 py-1 rounded-md">
+              <span className="text-sm font-semibold text-primary bg-muted px-2.5 py-1 rounded-md">
                 {items.filter((item) => item.quantity > 0).length} items
               </span>
             </h2>
@@ -614,7 +614,7 @@ export default function CheckoutPage() {
             <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2">
               {items.filter((item) => item.quantity > 0).map((item) => (
                 <div key={item.id} className="flex items-center gap-4">
-                  <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-border shrink-0 bg-secondary">
+                  <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-border shrink-0 bg-muted">
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                     <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full z-10">
                       {item.quantity}
@@ -630,15 +630,15 @@ export default function CheckoutPage() {
             </div>
 
             <div className="border-t border-border pt-6 mb-6">
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-stretch">
                 <input
                   type="text"
                   placeholder="Discount code"
-                  className="flex-1 px-4 py-3 border border-border rounded-xl bg-input-background uppercase text-sm focus:ring-2 focus:ring-primary focus:outline-none transition-all"
+                  className="flex-1 min-w-0 px-4 h-12 border border-border rounded-xl bg-background text-foreground uppercase text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value)}
                 />
-                <button onClick={handleApplyCoupon} className="px-6 py-3 bg-secondary text-secondary-foreground rounded-xl font-medium hover:bg-stone-200 transition-colors">
+                <button onClick={handleApplyCoupon} className="px-5 h-12 bg-primary text-primary-foreground rounded-xl font-bold text-sm hover:opacity-90 active:scale-[0.98] transition-all shrink-0 flex items-center justify-center">
                   Apply
                 </button>
               </div>
@@ -678,11 +678,14 @@ export default function CheckoutPage() {
               <button
                 onClick={handlePlaceOrder}
                 disabled={isProcessing || !isFormValid || !gatewayReady}
-                className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-lg hover:bg-amber-950 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                className="w-full bg-primary text-primary-foreground h-14 rounded-xl font-bold text-sm sm:text-base hover:bg-amber-950 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
               >
-                <ShoppingBag className="w-5 h-5" />
-                {isProcessing ? "Processing..." : `Pay ₹${total.toFixed(2)} with Razorpay`}
-                {!isProcessing && <ArrowRight className="w-5 h-5" />}
+                <ShoppingBag className="w-4 h-4 shrink-0" />
+                <span className="truncate">
+                  {isProcessing ? "Processing..." : `Pay ₹${total.toFixed(2)}`}
+                </span>
+                {!isProcessing && <span className="hidden sm:inline">with Razorpay</span>}
+                {!isProcessing && <ArrowRight className="w-4 h-4 shrink-0" />}
               </button>
 
               {gatewayError ? (
@@ -692,7 +695,7 @@ export default function CheckoutPage() {
               ) : null}
 
               {!isFormValid && (
-                <p className="text-center text-xs text-muted-foreground">
+                <p className="text-center text-xs text-muted-foreground leading-relaxed px-1">
                   Please fill in all required fields correctly (10-digit mobile, valid email, 6-digit pincode) and accept the terms to proceed.
                 </p>
               )}

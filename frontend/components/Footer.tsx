@@ -1,8 +1,14 @@
+"use client";
+
 import Link from "next/link";
 import { siteConfig } from "@/lib/site-config";
 import { Leaf } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export function Footer() {
+  const pathname = usePathname();
+
+  if (pathname?.startsWith("/admin")) return null;
   return (
     <footer className="w-full border-t border-border bg-card">
       <div className="max-w-6xl mx-auto px-4 py-12 md:py-16 grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -24,31 +30,40 @@ export function Footer() {
         {/* Quick Links */}
         <div className="flex flex-col gap-3">
           <h4 className="font-semibold text-foreground text-sm tracking-wider uppercase">Explore</h4>
+          <Link href="/" className="text-muted-foreground hover:text-primary text-sm transition-colors">
+            Home
+          </Link>
+          <Link href="/our-story" className="text-muted-foreground hover:text-primary text-sm transition-colors">
+            Our Story
+          </Link>
           <Link href="/select-products" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-            Order Jaggery
+            Shop (Pre-Book)
           </Link>
-          <Link href="/my-farm" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-            Book Farm Plot
+          <Link href="/impact" className="text-muted-foreground hover:text-primary text-sm transition-colors">
+            Impact & Empowerment
           </Link>
-          <Link href="/track" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-            Track Order
+          <Link href="/gallery" className="text-muted-foreground hover:text-primary text-sm transition-colors">
+            Media Gallery
           </Link>
           <Link href="/contact" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-            Contact Us
+            Contact
           </Link>
         </div>
 
         {/* Legal Policies */}
         <div className="flex flex-col gap-3">
-          <h4 className="font-semibold text-foreground text-sm tracking-wider uppercase">Policies</h4>
+          <h4 className="font-semibold text-foreground text-sm tracking-wider uppercase">Policies & Support</h4>
+          <Link href="/track" className="text-muted-foreground hover:text-primary text-sm transition-colors">
+            Track Order
+          </Link>
           <Link href="/privacy" className="text-muted-foreground hover:text-primary text-sm transition-colors">
             Privacy Policy
           </Link>
           <Link href="/terms" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-            Terms of Service
+            Terms & Conditions
           </Link>
           <Link href="/refund-policy" className="text-muted-foreground hover:text-primary text-sm transition-colors">
-            Refund & Cancellation
+            Refund Policy
           </Link>
           <Link href="/shipping-policy" className="text-muted-foreground hover:text-primary text-sm transition-colors">
             Shipping & Delivery
@@ -59,7 +74,7 @@ export function Footer() {
       <div className="border-t border-border py-6">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
           <p>&copy; {new Date().getFullYear()} {siteConfig.legalName}. All rights reserved.</p>
-          <p>Handcrafted in Kolhapur, Maharashtra</p>
+          <p>Handcrafted in Karbharwadi Village, Kolhapur, Maharashtra</p>
         </div>
       </div>
     </footer>

@@ -1,10 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import { siteConfig } from "@/lib/site-config";
 import { Navbar } from "@/components/Navbar";
 import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"], display: "swap" });
 
 export const metadata: Metadata = {
   title: {
@@ -63,6 +60,7 @@ import { CartProvider } from "@/components/CartProvider";
 import { ToastProvider } from "@/components/ToastProvider";
 import { PageTransition } from "@/components/PageTransition";
 import { Footer } from "@/components/Footer";
+import { SecurityProvider } from "@/components/SecurityProvider";
 
 export default function RootLayout({
   children,
@@ -70,9 +68,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} antialiased min-h-screen flex flex-col`}>
+    <html lang="en" data-scroll-behavior="smooth">
+      <body className="antialiased min-h-screen flex flex-col">
         <ToastProvider>
+          <SecurityProvider />
           <CartProvider>
             <Navbar />
             <main className="flex-1 flex flex-col">

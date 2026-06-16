@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Search, MapPin, Truck, Calendar, ArrowLeft, Leaf, Package, ClipboardCheck, Flame, RefreshCw } from "lucide-react";
 import Link from "next/link";
+import gsap from "gsap";
 
 function TrackOrderContent() {
   const router = useRouter();
@@ -13,8 +14,27 @@ function TrackOrderContent() {
   const [error, setError] = useState("");
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  const containerRef = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+  useEffect(() => {
+    // Initial page load animations
+    if (!containerRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(".track-header", 
+        { opacity: 0, y: 15 },
+        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }
+      );
+      gsap.fromTo(".track-input-card",
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.8, delay: 0.15, ease: "power3.out" }
+      );
+    }, containerRef);
+    return () => ctx.revert();
+  }, []);
 
   useEffect(() => {
     const code = searchParams.get("id");
@@ -24,6 +44,23 @@ function TrackOrderContent() {
       handleTrack(cleanCode);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (trackingData && resultsRef.current) {
+      // Dynamic tracking results animations when data arrives
+      const ctx = gsap.context(() => {
+        gsap.fromTo(".tracking-results-card",
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }
+        );
+        gsap.fromTo(".tracking-timeline-step",
+          { opacity: 0, x: -12 },
+          { opacity: 1, x: 0, duration: 0.5, stagger: 0.1, delay: 0.15, ease: "power3.out" }
+        );
+      }, resultsRef);
+      return () => ctx.revert();
+    }
+  }, [trackingData]);
 
   const handleTrack = async (codeToTrack?: string) => {
     const code = codeToTrack !== undefined ? codeToTrack : orderNumber;
@@ -135,28 +172,28 @@ function TrackOrderContent() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50/50 py-16 px-4 flex items-center justify-center">
+    <div ref={containerRef} className="min-h-screen bg-background py-12 md:py-14 px-5 md:px-8 flex items-center justify-center">
       <div className="max-w-xl w-full space-y-8">
         
         {/* Title */}
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 tracking-wider uppercase mb-3 hover:opacity-85 transition-opacity">
+        <div className="text-center track-header opacity-0">
+          <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-primary tracking-wider uppercase mb-3 hover:opacity-85 transition-opacity">
             <ArrowLeft className="w-3.5 h-3.5" />
             Back to Home
           </Link>
-          <h1 className="text-3xl md:text-4xl font-extrabold text-neutral-900 font-serif tracking-tight">Track Your Jaggery</h1>
-          <p className="text-xs text-neutral-500 mt-1.5">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-foreground font-serif tracking-tight">Track Your Jaggery</h1>
+          <p className="text-xs text-muted-foreground mt-1.5">
             Enter your Krushisarthi order number to monitor shipping status.
           </p>
         </div>
 
         {/* Input Card */}
-        <div className="bg-white border border-neutral-200/80 rounded-2xl p-6 shadow-sm">
+        <div className="bg-card border border-border track-input-card opacity-0 rounded-2xl p-6 shadow-sm">
           <div className="space-y-4">
             <div>
-              <label className="block text-[10px] text-neutral-400 font-bold uppercase tracking-wider mb-2">Order Number</label>
-              <div className="flex rounded-xl border border-neutral-200 focus-within:border-amber-900 focus-within:ring-1 focus-within:ring-amber-900 overflow-hidden bg-white shadow-inner">
-                <span className="bg-neutral-50 text-neutral-500 font-mono text-sm px-4 flex items-center justify-center border-r border-neutral-200/80 select-none font-bold">
+              <label className="block text-[10px] text-muted-foreground font-bold uppercase tracking-wider mb-2">Order Number</label>
+              <div className="flex rounded-xl border border-border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden bg-background">
+                <span className="bg-muted text-primary font-mono text-sm px-4 flex items-center justify-center border-r border-border select-none font-bold">
                   KS-
                 </span>
                 <input 
@@ -165,7 +202,7 @@ function TrackOrderContent() {
                   onChange={(e) => setOrderNumber(e.target.value.replace(/\D/g, ""))}
                   onKeyDown={handleKeyPress}
                   placeholder="0001" 
-                  className="flex-1 px-4 py-3.5 text-sm font-mono focus:outline-none placeholder:text-neutral-300"
+                  className="flex-1 bg-transparent px-4 py-3.5 text-sm font-mono text-foreground focus:outline-none placeholder:text-muted-foreground/45"
                 />
               </div>
             </div>
@@ -177,7 +214,7 @@ function TrackOrderContent() {
             <button
               onClick={() => handleTrack()}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 bg-neutral-950 hover:bg-neutral-800 text-white py-3.5 rounded-xl font-semibold text-xs tracking-wider uppercase transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 bg-primary hover:opacity-90 text-primary-foreground py-3.5 rounded-xl font-semibold text-xs tracking-wider uppercase transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -191,68 +228,70 @@ function TrackOrderContent() {
 
         {/* Tracking Journey Results */}
         {searched && trackingData && (
-          <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm space-y-6">
-            
-            {/* Header info */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
-              <div>
-                <span className="text-[9px] text-neutral-400 font-bold uppercase block tracking-wider">Tracking Reference</span>
-                <span className="font-mono text-base font-extrabold text-neutral-950">{trackingData.id}</span>
+          <div ref={resultsRef}>
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-6 tracking-results-card opacity-0">
+              
+              {/* Header info */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-border">
+                <div>
+                  <span className="text-[9px] text-muted-foreground font-bold uppercase block tracking-wider">Tracking Reference</span>
+                  <span className="font-mono text-base font-extrabold text-foreground">{trackingData.id}</span>
+                </div>
+                <div className="bg-muted text-primary border border-border rounded-full px-3 py-1 text-[10px] font-bold">
+                  Status: {trackingData.status}
+                </div>
               </div>
-              <div className="bg-amber-50 text-amber-900 border border-amber-900/10 rounded-full px-3 py-1 text-[10px] font-bold">
-                Status: {trackingData.status}
+
+              {/* Estimated Delivery */}
+              <div className="bg-muted rounded-xl p-4 flex items-center gap-3 border border-border">
+                <Calendar className="w-5 h-5 text-primary shrink-0" />
+                <div>
+                  <span className="text-[9px] text-muted-foreground font-bold uppercase block">Estimated Delivery</span>
+                  <span className="text-xs font-semibold text-foreground">{trackingData.estimatedDelivery}</span>
+                </div>
               </div>
-            </div>
 
-            {/* Estimated Delivery */}
-            <div className="bg-neutral-50 rounded-xl p-4 flex items-center gap-3 border border-neutral-100">
-              <Calendar className="w-5 h-5 text-amber-900 shrink-0" />
-              <div>
-                <span className="text-[9px] text-neutral-400 font-bold uppercase block">Estimated Delivery</span>
-                <span className="text-xs font-semibold text-neutral-800">{trackingData.estimatedDelivery}</span>
-              </div>
-            </div>
+              {/* Visual Steps Timeline */}
+              <div className="relative pl-6 space-y-6 before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-border">
+                {trackingData.steps.map((step: any, idx: number) => {
+                  const StepIcon = step.icon;
+                  const isCompleted = step.status === "completed";
+                  const isCurrent = step.status === "current";
 
-            {/* Visual Steps Timeline */}
-            <div className="relative pl-6 space-y-6 before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-[2px] before:bg-neutral-100">
-              {trackingData.steps.map((step: any, idx: number) => {
-                const StepIcon = step.icon;
-                const isCompleted = step.status === "completed";
-                const isCurrent = step.status === "current";
-
-                return (
-                  <div key={idx} className="flex gap-4 relative">
-                    {/* Bullet circle with icon inside */}
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center z-10 border-4 border-white shrink-0 shadow-sm
-                      ${isCompleted ? "bg-emerald-500 text-white ring-2 ring-emerald-100" : 
-                        isCurrent ? "bg-amber-500 text-white ring-2 ring-amber-100 animate-pulse" : 
-                        "bg-neutral-100 text-neutral-300"}`}
-                    >
-                      <StepIcon className="w-3.5 h-3.5" />
+                  return (
+                    <div key={idx} className="flex gap-4 relative tracking-timeline-step opacity-0">
+                      {/* Bullet circle with icon inside */}
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center z-10 border-4 border-card shrink-0 shadow-sm
+                        ${isCompleted ? "bg-success text-success-foreground ring-2 ring-success/20" : 
+                          isCurrent ? "bg-accent text-accent-foreground ring-2 ring-accent/20 animate-pulse" : 
+                          "bg-muted text-muted-foreground/60"}`}
+                      >
+                        <StepIcon className="w-3.5 h-3.5" />
+                      </div>
+                      
+                      <div className="min-w-0">
+                        <h4 className={`font-semibold text-xs leading-none ${isCompleted ? "text-foreground" : isCurrent ? "text-primary font-bold" : "text-muted-foreground/60"}`}>
+                          {step.title}
+                        </h4>
+                        <p className={`text-[10px] mt-1 ${isCompleted || isCurrent ? "text-muted-foreground" : "text-muted-foreground/50"}`}>
+                          {step.desc}
+                        </p>
+                        <span className="text-[9px] text-muted-foreground font-mono mt-1 block">
+                          {step.time}
+                        </span>
+                      </div>
                     </div>
-                    
-                    <div className="min-w-0">
-                      <h4 className={`font-semibold text-xs leading-none ${isCompleted ? "text-neutral-950" : isCurrent ? "text-amber-950 font-bold" : "text-neutral-400"}`}>
-                        {step.title}
-                      </h4>
-                      <p className={`text-[10px] mt-1 ${isCompleted || isCurrent ? "text-neutral-500" : "text-neutral-400"}`}>
-                        {step.desc}
-                      </p>
-                      <span className="text-[9px] text-neutral-400 font-mono mt-1 block">
-                        {step.time}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
 
-            {/* Location origin info */}
-            <div className="pt-4 border-t border-neutral-100 flex items-center gap-2 text-[10px] text-neutral-400">
-              <MapPin className="w-3.5 h-3.5 shrink-0" />
-              <span>Origin Hub: <strong>{trackingData.origin}</strong></span>
-            </div>
+              {/* Location origin info */}
+              <div className="pt-4 border-t border-border flex items-center gap-2 text-[10px] text-muted-foreground">
+                <MapPin className="w-3.5 h-3.5 shrink-0" />
+                <span>Origin Hub: <strong>{trackingData.origin}</strong></span>
+              </div>
 
+            </div>
           </div>
         )}
 

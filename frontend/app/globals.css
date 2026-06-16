@@ -1,38 +1,172 @@
+/* ─── Google Fonts — must come first ───────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: #f7f4ed;
-    --foreground: #292524;
-    --primary: #78350f;
-    --primary-foreground: #fef3c7;
-    --card: #ffffff;
-    --card-foreground: #292524;
-    --secondary: #eae4d3;
-    --secondary-foreground: #292524;
-    --muted: #eae4d3;
-    --muted-foreground: #78716c;
-    --accent: #fef3c7;
-    --accent-foreground: #78350f;
-    --destructive: #dc2626;
+    --background:          #FAF6EE;
+    --foreground:          #2B2B2B;
+    --primary:             #8B5A2B;
+    --primary-foreground:  #FAF6EE;
+    --card:                #ffffff;
+    --card-foreground:     #2B2B2B;
+    --secondary:           #4F7A28;
+    --secondary-foreground:#FAF6EE;
+    --muted:               #F1E6D2;
+    --muted-foreground:    #5C5C5C;
+    --accent:              #D4A24C;
+    --accent-foreground:   #2B2B2B;
+    --destructive:         #dc2626;
     --destructive-foreground: #ffffff;
-    --border: #dfd7c3;
-    --input-background: #ffffff;
-    --switch-background: #d6d3d1;
-    --ring: #78350f;
-    --radius: 0.5rem;
-    --radius-sm: 0.25rem;
-    --radius-lg: 0.5rem;
-    --radius-xl: 0.75rem;
+    --border:              #E5D9C4;
+    --input-background:    #ffffff;
+    --switch-background:   #d6d3d1;
+    --ring:                #8B5A2B;
+    --success:             #6A8A45;
+    --success-foreground:  #ffffff;
+    --radius:              0.5rem;
+    --radius-sm:           0.25rem;
+    --radius-lg:           0.75rem;
+    --radius-xl:           1rem;
+
+    /* Typography tokens */
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body:    'DM Sans', system-ui, sans-serif;
+
+    /* Spacing rhythm (8pt grid) */
+    --space-xs:  0.5rem;
+    --space-sm:  1rem;
+    --space-md:  1.5rem;
+    --space-lg:  2.5rem;
+    --space-xl:  4rem;
+    --space-2xl: 7rem;
   }
 
-}
+  *, *::before, *::after { box-sizing: border-box; }
 
-@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
     background-color: var(--background);
     color: var(--foreground);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.65;
+  }
+
+  /* Display headings use editorial serif */
+  h1, h2, h3, .font-serif {
+    font-family: var(--font-display);
+  }
+
+  /* Clean focus rings (keyboard nav) */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  /* Styled scrollbar */
+  ::-webkit-scrollbar        { width: 6px; }
+  ::-webkit-scrollbar-track  { background: var(--muted); }
+  ::-webkit-scrollbar-thumb  { background: var(--border); border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+
+  /* Selection highlight */
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-foreground);
   }
 }
+
+/* ─── Grain texture overlay (design spell) ────────────────────── */
+@layer utilities {
+  .grain-overlay {
+    position: relative;
+  }
+  .grain-overlay::after {
+    content: '';
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+    border-radius: inherit;
+    z-index: 1;
+  }
+
+  /* Editorial ruled underline for section labels */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--primary);
+  }
+  .eyebrow::before {
+    content: '';
+    display: block;
+    width: 1.75rem;
+    height: 1.5px;
+    background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* Lift on hover — purposeful, not decorative */
+  .hover-lift {
+    transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+                box-shadow 0.22s ease;
+  }
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px -8px rgba(139,90,43,0.18);
+  }
+
+  /* Image reveal on load */
+  .img-reveal {
+    animation: imgReveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Scroll-in fade for sections */
+  .fade-up {
+    animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+/* ─── Keyframes ──────────────────────────────────────────────────── */
+@keyframes imgReveal {
+  from { opacity: 0; transform: scale(1.04); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+/* ─── Toast animation ────────────────────────────────────────────── */
+@keyframes toast-slide-in {
+  from { transform: translateY(1.5rem) scale(0.95); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+.animate-toast {
+  animation: toast-slide-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
