@@ -349,8 +349,8 @@ export const getOrderEmailHtml = (order) => {
         <a href="${trackingLink}">Track Order</a> |
         <a href="${frontendUrl}/contact">Support</a>
       </div>
-      <p>&copy; ${new Date().getFullYear()} Krushisarthi. All rights reserved.</p>
-      <p style="margin-top: 4px;">If you have any questions, please contact us at support@krushisarthi.com</p>
+      <p>&copy; ${new Date().getFullYear()} Hope Foundation Gadhinglaj Pvt. Ltd. All rights reserved.</p>
+      <p style="margin-top: 4px;">If you have any questions, please contact us at support@krushisarthi.in</p>
     </div>
   </div>
 </body>

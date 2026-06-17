@@ -457,7 +457,7 @@ export default function AdminLoginPage() {
           </form>
           {/* Footer note */}
           <p className="form-footer text-center text-[10px] mt-6" style={{ color: "#C5B49A", opacity: 0 }}>
-            © {new Date().getFullYear()} Krushisarthi Farmer Producer Collective
+            © {new Date().getFullYear()} Hope Foundation Gadhinglaj Pvt. Ltd. All rights reserved.
           </p>
         </div>
       </div>

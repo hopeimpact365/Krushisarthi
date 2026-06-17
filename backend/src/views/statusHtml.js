@@ -379,7 +379,7 @@ export const getStatusHtml = (stats) => {
             </div>
         </div>
         <div class="footer">
-            Krushisarthi &copy; ${new Date().getFullYear()} &bull; Built with Node.js & Express
+            Hope Foundation Gadhinglaj Pvt. Ltd. &copy; ${new Date().getFullYear()} &bull; Built with Node.js & Express
         </div>
     </div>
 </body>

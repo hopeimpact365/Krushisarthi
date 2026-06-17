@@ -7,6 +7,7 @@ import { useToast } from "@/components/ToastProvider";
 import confetti from "canvas-confetti";
 import { CheckCircle2, Download, MapPin, Phone, Mail, User, CreditCard, ShoppingBag, RefreshCw } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { siteConfig } from "@/lib/site-config";
 
 function ConfirmationContent() {
   const { orderDetails, items, clearCart } = useCart();
@@ -298,7 +299,7 @@ function ConfirmationContent() {
           <div class="title">KRUSHISARTHI</div>
           <div class="subtitle">Pure Natural Jaggery & Farm Products</div>
           <div style="font-size: 10px; color: #737373; margin-top: 8px;">
-            123, Farm Road, Kolhapur, Maharashtra 416001 | GSTIN: 29AABCU9603R1ZX
+            ${siteConfig.contact.address} | GSTIN: ${siteConfig.registrations.gstin}
           </div>
         </div>
 
@@ -554,7 +555,7 @@ function ConfirmationContent() {
                 <div className="text-center pb-4 border-b border-dashed border-neutral-300 mb-4">
                   <span className="font-bold tracking-wider block uppercase text-xs">KRUSHISARTHI</span>
                   <span className="text-[9px] text-neutral-500 block mt-0.5">Pure Natural Jaggery</span>
-                  <div className="text-[8px] text-neutral-400 mt-1">GSTIN: 29AABCU9603R1ZX</div>
+                  <div className="text-[8px] text-neutral-400 mt-1">GSTIN: {siteConfig.registrations.gstin}</div>
                 </div>
 
                 <div className="space-y-1 mb-4 text-[10px] text-neutral-600">

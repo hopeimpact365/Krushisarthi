@@ -100,7 +100,7 @@ export const sendContactUsEmail = async (enquiry) => {
         
         <div style="text-align: center; margin-top: 25px; color: #7f7f7f; font-size: 11px;">
           <p style="margin: 0;">This email was generated automatically by the Krushisarthi contact form.</p>
-          <p style="margin: 5px 0 0 0;">&copy; ${new Date().getFullYear()} Krushisarthi Farmer Producer Collective. All rights reserved.</p>
+          <p style="margin: 5px 0 0 0;">&copy; ${new Date().getFullYear()} Hope Foundation Gadhinglaj Pvt. Ltd. All rights reserved.</p>
         </div>
       </div>
     `;
@@ -176,7 +176,7 @@ export const sendNewsletterWelcomeEmail = async (subscriberEmail) => {
         
         <div style="text-align: center; margin-top: 25px; color: #7f7f7f; font-size: 11px;">
           <p style="margin: 0;">You received this email because you subscribed to the Krushisarthi newsletter list.</p>
-          <p style="margin: 5px 0 0 0;">&copy; ${new Date().getFullYear()} Krushisarthi Farmer Producer Collective. All rights reserved.</p>
+          <p style="margin: 5px 0 0 0;">&copy; ${new Date().getFullYear()} Hope Foundation Gadhinglaj Pvt. Ltd. All rights reserved.</p>
         </div>
       </div>
     `;
