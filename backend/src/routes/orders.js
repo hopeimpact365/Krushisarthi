@@ -164,6 +164,50 @@ router.get('/:orderId', async (req, res) => {
   }
 });
 
+// @route   PATCH /api/orders/status
+// @desc    Update status of multiple orders
+// @access  Private
+router.patch('/status', adminAuth, async (req, res) => {
+  try {
+    const { orderIds, status } = req.body;
+
+    if (!orderIds || !Array.isArray(orderIds) || !orderIds.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide an array of orderIds.'
+      });
+    }
+
+    const validStatuses = ['received', 'processing', 'shipped', 'delivered', 'cancelled'];
+    if (!status || !validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Please provide a valid status: ${validStatuses.join(', ')}`
+      });
+    }
+
+    const result = await Order.updateMany(
+      { orderId: { $in: orderIds } },
+      { $set: { status } }
+    );
+
+    console.log(`📦 Updated status to '${status}' for ${result.modifiedCount} orders: ${JSON.stringify(orderIds)}`);
+
+    res.status(200).json({
+      success: true,
+      message: `Successfully updated ${result.modifiedCount} orders to '${status}'.`,
+      modifiedCount: result.modifiedCount
+    });
+  } catch (error) {
+    console.error(`❌ Error updating order statuses: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating order statuses.',
+      error: error.message
+    });
+  }
+});
+
 // @route   DELETE /api/orders
 // @desc    Delete multiple orders
 // @access  Private

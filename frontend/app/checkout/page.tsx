@@ -497,36 +497,6 @@ export default function CheckoutPage() {
                 </div>
               </div>
             </div>
-
-            <div className="mt-4">
-              <label className="text-sm font-medium mb-3 block">Delivery Zone Selection</label>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {[
-                  { id: "local", label: "Local (Same City)", fee: 50 },
-                  { id: "state", label: "Within State", fee: 100 },
-                  { id: "national", label: "National (Out of state)", fee: 200 },
-                ].map((zone) => (
-                  <label
-                    key={zone.id}
-                    className={`flex items-center gap-3 p-4 border rounded-xl transition-all ${deliveryZone === zone.id ? "border-primary bg-primary/5 ring-1 ring-primary cursor-default" : "border-border bg-muted/20 opacity-65 cursor-not-allowed"}`}
-                  >
-                    <input
-                      type="radio"
-                      name="deliveryZone"
-                      value={zone.id}
-                      checked={deliveryZone === zone.id}
-                      disabled={true}
-                      className="w-4 h-4 text-primary accent-primary cursor-not-allowed"
-                      readOnly
-                    />
-                    <div>
-                      <div className="font-medium text-sm">{zone.label}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">₹{zone.fee}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
           </div>
 
           <div className="space-y-6">
