@@ -9,8 +9,13 @@ const connectDB = async () => {
       return null;
     }
 
-    // Modern mongoose connections don't require deprecated options anymore
-    const conn = await mongoose.connect(connString);
+    // Configure connection pooling to optimize database operations under load
+    const conn = await mongoose.connect(connString, {
+      maxPoolSize: 100,
+      minPoolSize: 10,
+      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 5000,
+    });
     
     console.log(`🌐 MongoDB Connected: ${conn.connection.host}`);
     return conn;

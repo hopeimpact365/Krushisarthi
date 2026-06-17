@@ -5,6 +5,8 @@ import morgan from 'morgan';
 import os from 'os';
 import mongoose from 'mongoose';
 import connectDB from './config/db.js';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import ordersRouter from './routes/orders.js';
 import paymentsRouter from './routes/payments.js';
 import adminRouter from './routes/admin.js';
@@ -45,6 +47,38 @@ app.use(cors({
   },
   credentials: true
 }));
+// Security middleware
+app.use(helmet({
+  contentSecurityPolicy: false,
+}));
+
+// Standard rate limiter for all API requests
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // limit each IP to 300 requests per window
+  standardHeaders: true, 
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many requests from this IP, please try again after 15 minutes."
+  }
+});
+
+// Strict rate limiter for sensitive authentication / admin routes
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // limit each IP to 30 requests per window to prevent brute force
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Too many login attempts. Please try again after 15 minutes."
+  }
+});
+
+app.use('/api', apiLimiter);
+app.use('/api/admin/login', loginLimiter);
+
 app.use(morgan('dev'));
 app.use(express.json());
 

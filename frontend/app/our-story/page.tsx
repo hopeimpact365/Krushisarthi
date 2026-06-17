@@ -160,8 +160,19 @@ export default function OurStoryPage() {
     <div ref={containerRef} className="flex-1 w-full" style={{ background: "#FAF6EE", fontFamily: "var(--font-body)" }}>
 
       {/* ── Page header — tight, not a giant centered hero ─────────── */}
-      <section className="py-12 md:py-14 px-5 md:px-8 border-b" style={{ background: "#F1E6D2", borderColor: "#E5D9C4" }}>
-        <div className="max-w-6xl mx-auto">
+      <section className="relative py-16 md:py-20 px-5 md:px-8 border-b overflow-hidden" style={{ borderColor: "#E5D9C4" }}>
+        {/* Background Image with optimized light overlay for perfect readability of dark text */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/images/our_story_heritage.png"
+            alt="Sugarcane harvest heritage"
+            className="w-full h-full object-cover opacity-20"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#F1E6D2] via-[#F1E6D2]/80 to-[#F1E6D2]/40" />
+          <div className="absolute inset-0 bg-[#F1E6D2]/65" />
+        </div>
+
+        <div className="relative z-10 max-w-6xl mx-auto">
           <span className="eyebrow story-header-eyebrow opacity-0">The Heritage & The Mission</span>
           <h1 className="mt-3 text-4xl md:text-5xl font-bold leading-tight max-w-2xl story-header-title opacity-0"
             style={{ fontFamily: "var(--font-display)", color: "#2B2B2B" }}>
@@ -185,7 +196,7 @@ export default function OurStoryPage() {
               For centuries, the fertile black soil of Kolhapur, along the banks of the Panchganga river, produced the world&apos;s sweetest sugarcane. Processed in local farm units called <strong style={{ color: "#2B2B2B" }}>gurhalghars</strong>, Kolhapuri Jaggery was celebrated for its golden colour and mineral richness.
             </p>
             <p className="text-sm leading-relaxed" style={{ color: "#5C5C5C" }}>
-              Cheap industrial sugar disrupted this heritage. Mass-manufacturers began bleaching jaggery with sodium hydrosulfite and adulterating it with sugar syrup. Real Kolhapuri Jaggery was driven to extinction — gurhalghars crashed from thousands to under a hundred.
+              Cheap industrial sugar disrupted this heritage. Mass-manufacturers began bleaching jaggery with sodium hydrosulfite and adulterating it with sugar syrup. Real Kolhapuri Jaggery was driven to extinction, and gurhalghars crashed from thousands to under a hundred.
             </p>
             <div className="border-l-2 pl-4 py-1" style={{ borderColor: "#8B5A2B" }}>
               <p className="text-xs leading-relaxed font-medium" style={{ color: "#8B5A2B" }}>
@@ -222,7 +233,7 @@ export default function OurStoryPage() {
               The revival began in <strong style={{ color: "#2B2B2B" }}>Karbharwadi</strong>, a pioneer community recognized for its village-led development. Its leadership and FPO refused to let their heritage die.
             </p>
             <p className="text-sm leading-relaxed" style={{ color: "#5C5C5C" }}>
-              132 sugarcane farmers pooled resources and land to establish a standardized, community-managed drip irrigation system — transitioning to organic, chemical-free cultivation under one unified collective.
+              132 sugarcane farmers pooled resources and land to establish a standardized, community-managed drip irrigation system, transitioning to organic, pure cultivation under one unified collective.
             </p>
             <div className="flex gap-7 pt-2">
               {[["132", "Collective farmers"], ["100%", "Drip irrigated"], ["40%", "Water saved"]].map(([v, l]) => (
@@ -254,14 +265,14 @@ export default function OurStoryPage() {
                 name: "Dr. Netaji Patil",
                 role: "Chairman of the FPO",
                 tag: '"Jaggery Man of Kolhapur"',
-                bio: 'A respected academic and agronomist, Dr. Patil designed the agricultural blueprint for Karbharwadi. He established the FPO structure, introduced biological pest control, and engineered the village\'s automated community water-sharing system — proving sustainable rural farming can outperform industrial agriculture.'
+                bio: 'A respected academic and agronomist, Dr. Patil designed the agricultural blueprint for Karbharwadi. He established the FPO structure, introduced biological pest control, and engineered the village\'s automated community water-sharing system, proving sustainable rural farming can outperform industrial agriculture.'
               },
               {
                 Icon: TrendingUp,
                 name: "Nachiket & Hope Foundation",
                 role: "Founder & CEO, Hope Social Enterprise",
                 tag: "Social Entrepreneur",
-                bio: "Recognizing the village's unity and product quality, Nachiket launched Krushi Sarthi. Through the Hope Foundation, he established strict processing SOPs, plastic-free packaging, and a direct-to-consumer digital marketplace — ensuring the FPO bypasses APMC middlemen entirely."
+                bio: "Recognizing the village's unity and product quality, Nachiket launched Krushi Sarthi. Through the Hope Foundation, he established strict processing SOPs, plastic-free packaging, and a direct-to-consumer digital marketplace, ensuring the FPO bypasses APMC middlemen entirely."
               }
             ].map(({ Icon, name, role, tag, bio }) => (
               <div key={name} className="flex gap-5 p-6 border rounded-xl alliance-card opacity-0" style={{ background: "#FAF6EE", borderColor: "#E5D9C4" }}>
@@ -289,15 +300,15 @@ export default function OurStoryPage() {
               Hygienic, Organic Crushing & Boiling
             </h2>
             <p className="mt-2 text-sm max-w-2xl leading-relaxed" style={{ color: "#5C5C5C" }}>
-              Traditional jaggery was made in open pans exposed to dust and insects. Krushi Sarthi set up a closed hygienic boiling unit where fresh cane juice is clarified using organic extracts of the wild Ladyfinger plant — not chemical bleaches. The result: pure, golden-amber jaggery that retains natural vitamins.
+              Traditional jaggery was made in open pans exposed to dust and insects. Krushi Sarthi set up a closed hygienic boiling unit where fresh cane juice is clarified using organic extracts of the wild Ladyfinger plant instead of synthetic bleaches. The result is pure, golden-amber jaggery that retains natural vitamins.
             </p>
           </div>
 
           <div className="grid sm:grid-cols-3 gap-px" style={{ background: "#E5D9C4" }}>
             {[
-              { Icon: Flame,    t: "Organically Clarified", d: "Purified with wild plant mucilage — no sulfur, no bleaching chemicals, ever." },
-              { Icon: Users,    t: "Women SHG Run",          d: "Managed and packed by trained local women's Self-Help Groups." },
-              { Icon: Sparkles, t: "Batch Safety Checks",    d: "Standardized hygiene monitoring, batch tracking, and food safety compliance." },
+              { Icon: Flame, t: "Organically Clarified", d: "Purified with wild plant mucilage, with no sulfur or bleaching agents, ever." },
+              { Icon: Users, t: "Women SHG Run", d: "Managed and packed by trained local women's Self-Help Groups." },
+              { Icon: Sparkles, t: "Batch Safety Checks", d: "Standardized hygiene monitoring, batch tracking, and food safety compliance." },
             ].map(({ Icon, t, d }) => (
               <div key={t} className="bg-white p-6 space-y-2 hover:bg-[#FAF6EE] transition-colors processing-item opacity-0">
                 <Icon className="w-5 h-5" style={{ color: "#8B5A2B" }} />

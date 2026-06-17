@@ -132,6 +132,11 @@ const OrderSchema = new mongoose.Schema({
   timestamps: true
 });
 
+// Create indexes to optimize dashboard analytics and search performance
+OrderSchema.index({ "customer.email": 1 });
+OrderSchema.index({ status: 1 });
+OrderSchema.index({ paymentStatus: 1 });
+
 const Order = mongoose.model('Order', OrderSchema);
 
 export default Order;

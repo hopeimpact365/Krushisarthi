@@ -21,7 +21,7 @@ export function Navbar() {
   const totalWeight = getTotalWeight();
   const [open, setOpen] = useState(false);
 
-  if (pathname?.startsWith("/admin")) return null;
+  if (pathname?.startsWith("/admin") || pathname === "/ks-gateway") return null;
 
   return (
     <header

@@ -15,11 +15,10 @@ const products = [
 ];
 
 const faqs = [
-  { q: "What is GI Tagged Jaggery?", a: "A Geographical Indication tag certifies production using traditional methods in Kolhapur's specific terroir — renowned for its distinct golden colour and high mineral content." },
+  { q: "What is GI Tagged Jaggery?", a: "A Geographical Indication tag certifies production using traditional methods in Kolhapur's specific terroir, renowned for its distinct golden colour and high mineral content." },
   { q: "Why is pre-booking required?", a: "Pre-booking gives farmers demand visibility before harvest. Sugarcane is crushed within hours of cutting, so committed orders ensure zero waste and peak freshness." },
-  { q: "Is it chemical free?", a: "Yes. We clarify using wild ladyfinger-stem mucilage — not sodium hydrosulfite or calcium carbonate. No bleaches, no colouring, no adulteration." },
   { q: "How is it different from market jaggery?", a: "Market jaggery is routinely mixed with sugar syrup, chalk powder, and sulfur agents. Ours is processed in a hygienic FPO unit and tested for purity." },
-  { q: "When will my order ship?", a: "After harvest and processing — typically 10–14 days from booking. Your Order ID tracks every stage from cane cut to doorstep." },
+  { q: "When will my order ship?", a: "After harvest and processing, typically 10–14 days from booking. Your Order ID tracks every stage from cane cut to doorstep." },
   { q: "How can I track my order?", a: "Enter your KS-XXXX number in the Track section below. Status: harvested → boiled → packed → shipped → delivered." },
 ];
 
@@ -340,7 +339,7 @@ export default function HomePage() {
           </h1>
 
           <p className="mt-4 text-sm md:text-base text-white/65 max-w-sm leading-relaxed hero-desc opacity-0">
-            Chemical-free Kolhapuri jaggery from 132 sugarcane farmers. Pre-book a fresh batch — harvested to order.
+            Pure Kolhapuri jaggery from 132 sugarcane farmers. Pre-book a fresh batch  harvested to order.
           </p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3 hero-ctas opacity-0">
@@ -357,7 +356,7 @@ export default function HomePage() {
 
           {/* stat strip — tight, close to CTAs */}
           <div className="mt-10 pt-6 border-t border-white/10 flex flex-wrap gap-8">
-            {[["132+", "Farmer families"], ["2780 → 89", "Units surviving"], ["100%", "Chemical free"]].map(([n, l]) => (
+            {[["132+", "Farmer families"], ["2780 → 89", "Units surviving"], ["100%", "Pure Jaggery"]].map(([n, l]) => (
               <div key={l} className="hero-stat-item opacity-0">
                 <div className="text-xl font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>{n}</div>
                 <div className="text-[10px] text-white/45 tracking-wider uppercase">{l}</div>
@@ -378,10 +377,10 @@ export default function HomePage() {
           </div>
           <div className="space-y-4 text-[#5C5C5C]">
             <p className="text-sm leading-relaxed">
-              Kolhapur once had <strong className="text-[#2B2B2B]">2,780 traditional jaggery units</strong>. Today only 89 survive. Market jaggery is adulterated with sulfur, chalk, and sugar syrup. Farmers — holding a GI tag — are forced to sell at basic sugarcane rates.
+              Kolhapur once had <strong className="text-[#2B2B2B]">2,780 traditional jaggery units</strong>. Today only 89 survive. Market jaggery is adulterated with sulfur, chalk, and sugar syrup. Farmers, holding a GI tag, are forced to sell at basic sugarcane rates.
             </p>
             <p className="text-sm leading-relaxed">
-              Krushi Sarthi connects the 132-farmer FPO of Karbharwadi directly to conscious consumers — restoring fair value and bringing you jaggery you can genuinely trace.
+              Krushi Sarthi connects the 132-farmer FPO of Karbharwadi directly to conscious consumers, restoring fair value and bringing you jaggery you can genuinely trace.
             </p>
             <Link href="/our-story" className="inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: "#8B5A2B" }}>
               Read the full story <ArrowRight className="w-3.5 h-3.5" />
@@ -413,7 +412,7 @@ export default function HomePage() {
               One village changed everything
             </h2>
             <p className="text-sm text-[#5C5C5C] leading-relaxed">
-              Karbharwadi is Maharashtra's recognized <em>Model Wadi</em>. Led by Prof. Dr. Netaji Patil — the "Jaggery Man of Kolhapur" — 132 families built a centralized drip-irrigation network, erected poly-houses, and established a women-SHG-run hygienic boiling unit.
+              Karbharwadi is Maharashtra's recognized <em>Model Wadi</em>. Led by Prof. Dr. Netaji Patil, the "Jaggery Man of Kolhapur", 132 families built a centralized drip-irrigation network, erected poly-houses, and established a women-SHG-run hygienic boiling unit.
             </p>
             <p className="text-sm text-[#5C5C5C] leading-relaxed">
               The village doesn't sell through middlemen. It sells directly to you.
@@ -451,18 +450,14 @@ export default function HomePage() {
                 <div className="aspect-[4/3] overflow-hidden bg-[#F1E6D2]">
                   <img src={p.img} alt={p.name} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
                 </div>
-                <div className="p-5 flex flex-col flex-1 gap-2">
-                  <div className="flex items-center justify-between">
+                <div className="p-5 flex flex-col justify-between flex-1">
+                  <div className="flex items-center justify-between mb-4">
                     <span className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: "#5C5C5C" }}>{p.form}</span>
                     <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold" style={{ background: "#F1E6D2", color: "#8B5A2B" }}>Pre-order open</span>
                   </div>
-                  <h3 className="text-lg font-bold" style={{ fontFamily: "var(--font-display)", color: "#2B2B2B" }}>{p.name}</h3>
-                  <div className="mt-auto flex items-center justify-between pt-3 border-t border-[#E5D9C4]">
-                    <div>
-                      <span className="text-[10px] text-[#5C5C5C]">per kg</span>
-                      <div className="text-xl font-bold" style={{ fontFamily: "var(--font-display)", color: "#2B2B2B" }}>₹{p.price}</div>
-                    </div>
-                    <Link href="/select-products" className="px-4 py-2 rounded-full text-xs font-semibold" style={{ background: "#8B5A2B", color: "#FAF6EE" }}>
+                  <div className="flex items-center justify-between pt-3 border-t border-[#E5D9C4] mt-auto">
+                    <h3 className="text-lg font-bold" style={{ fontFamily: "var(--font-display)", color: "#2B2B2B" }}>{p.name}</h3>
+                    <Link href="/select-products" className="px-4 py-2 rounded-full text-xs font-semibold shrink-0 transition-colors hover:bg-[#8B5A2B]/90" style={{ background: "#8B5A2B", color: "#FAF6EE" }}>
                       Reserve
                     </Link>
                   </div>
@@ -485,11 +480,11 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[#E5D9C4]">
             {[
-              { n: "01", t: "GI Tagged Heritage",   d: "Geographical Indication certification — authenticity guaranteed by law." },
-              { n: "02", t: "Zero Chemicals",        d: "Clarified with wild ladyfinger-stem extract. No hydros, sulfur, or bleach." },
+              { n: "01", t: "GI Tagged Heritage",   d: "Geographical Indication certification, authenticity guaranteed by law." },
+              { n: "02", t: "Batch Traceability",    d: "Every order has a harvest date and farm plot ID. Real transparency." },
               { n: "03", t: "Traditional Boiling",   d: "Open-pan slow-boil preserves potassium, magnesium, and natural enzymes." },
               { n: "04", t: "FPO Direct",             d: "Bypasses APMC middlemen. 100% price benefit reaches the farming families." },
-              { n: "05", t: "Batch Traceability",    d: "Every order has a harvest date and farm plot ID. Real transparency." },
+              { n: "05", t: "100% Pure Jaggery",     d: "Clarified with wild ladyfinger-stem extract. No hydros, sulfur, or bleach." },
               { n: "06", t: "Women-Run Unit",         d: "Processing, packing, QC managed by 100+ women from local SHGs." },
             ].map(({ n, t, d }) => (
               <div key={n} className="bg-white p-6 space-y-2 hover:bg-[#FAF6EE] transition-colors diff-item opacity-0">
@@ -506,7 +501,7 @@ export default function HomePage() {
       <section className="py-12 md:py-14 px-5 md:px-8 grain-overlay border-b border-[#E5D9C4] section-impact-strip" style={{ background: "#8B5A2B" }}>
         <div className="max-w-6xl mx-auto relative z-10 flex flex-col md:flex-row md:items-center gap-8 md:gap-0 md:justify-between">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[["132+", "Farmers supported"], ["100%", "Chemical free"], ["100+", "Women employed"], ["1", "Model village"]].map(([v, l]) => (
+            {[["132+", "Farmers supported"], ["100%", "Pure Jaggery"], ["100+", "Women employed"], ["1", "Model village"]].map(([v, l]) => (
               <div key={l} className="impact-stat opacity-0">
                 <div className="text-4xl md:text-5xl font-bold text-white" style={{ fontFamily: "var(--font-display)" }}>{v}</div>
                 <div className="text-xs mt-1" style={{ color: "#D4A24C" }}>{l}</div>
@@ -531,9 +526,9 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { t: "Traditional Jaggery Production", d: "Inside the chemical-free 'gurhalghar' — from cane juice to golden blocks.", u: "https://youtu.be/M95aPahn_ig", dur: "4 min" },
+              { t: "Traditional Jaggery Production", d: "Inside the traditional 'gurhalghar', from cane juice to golden blocks.", u: "https://youtu.be/M95aPahn_ig", dur: "4 min" },
               { t: "The Model Village Initiative",   d: "How Karbharwadi built self-reliance with greenhouses, solar, and drip lines.", u: "https://youtu.be/AgbRQFec_5M", dur: "6 min" },
-              { t: "FPO & Community Irrigation",     d: "132 farmers, one water system — the story of collective farming.", u: "https://youtu.be/tfvGfJw60Q", dur: "5 min" },
+              { t: "FPO & Community Irrigation",     d: "132 farmers, one water system, the story of collective farming.", u: "https://youtu.be/tfvGfJw60Q", dur: "5 min" },
               { t: "Founder & Farmer Interview",     d: "Nachiket and Dr. Netaji Patil on heritage, crisis, and revival.", u: "https://youtu.be/hCJWoho7D2U", dur: "8 min" },
             ].map(({ t, d, u, dur }) => (
               <a key={t} href={u} target="_blank" rel="noopener noreferrer"

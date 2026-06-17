@@ -44,6 +44,7 @@ interface UserRecord {
   weightKg: number;
   cropStage: "Seedling" | "Growing" | "Mature" | "Harvested";
   address: string;
+  orderStatus: "received" | "processing" | "shipped" | "delivered" | "cancelled";
 }
 
 interface ActivityLog {
@@ -61,9 +62,11 @@ const initialActivities: ActivityLog[] = [];
 export default function AdminDashboardPage() {
   const router = useRouter();
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<"overview" | "users">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "users" | "orders">("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | "Completed" | "Pending" | "Failed">("All");
+  const [trackingStatusFilter, setTrackingStatusFilter] = useState<string>("All");
+  const [ordersPage, setOrdersPage] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
@@ -74,6 +77,7 @@ export default function AdminDashboardPage() {
   
   const [adminUser, setAdminUser] = useState<{ name: string; email: string } | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [fetchTrigger, setFetchTrigger] = useState(0);
 
   const itemsPerPage = 6;
   const tabContentRef = useRef<HTMLDivElement>(null);
@@ -98,7 +102,7 @@ export default function AdminDashboardPage() {
     try {
       const token = localStorage.getItem("admin_token");
       if (!token) {
-        router.push("/admin/login");
+        router.push("/");
         return;
       }
 
@@ -134,7 +138,7 @@ export default function AdminDashboardPage() {
     try {
       const token = localStorage.getItem("admin_token");
       if (!token) {
-        router.push("/admin/login");
+        router.push("/");
         return;
       }
 
@@ -163,12 +167,60 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleStatusUpdate = async (orderIds: string[], newStatus: string) => {
+    try {
+      const token = localStorage.getItem("admin_token");
+      if (!token) {
+        router.push("/");
+        return;
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const response = await fetch(`${apiUrl}/api/orders/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ orderIds, status: newStatus })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        showToast(`Successfully updated ${orderIds.length} order(s) to '${newStatus}'.`, "success");
+        setSelectedUserIds([]);
+        setFetchTrigger(prev => prev + 1);
+        
+        // Update selectedUser if its status was changed
+        if (selectedUser && orderIds.includes(selectedUser.id)) {
+          let cropStage: "Seedling" | "Growing" | "Mature" | "Harvested" = "Growing";
+          if (newStatus === "received" || newStatus === "cancelled") {
+            cropStage = "Seedling";
+          } else if (newStatus === "processing") {
+            cropStage = "Growing";
+          } else if (newStatus === "shipped") {
+            cropStage = "Mature";
+          } else if (newStatus === "delivered") {
+            cropStage = "Harvested";
+          }
+          setSelectedUser(prev => prev ? { ...prev, orderStatus: newStatus as any, cropStage } : null);
+        }
+      } else {
+        showToast(data.message || "Failed to update order status.", "error");
+      }
+    } catch (err: any) {
+      console.error(err);
+      showToast("An error occurred while updating order status.", "error");
+    }
+  };
+
   // Session verification on mount
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
     const userStr = localStorage.getItem("admin_user");
     if (!token) {
-      router.push("/admin/login");
+      router.push("/");
       return;
     }
     setIsAuthenticated(true);
@@ -181,10 +233,15 @@ export default function AdminDashboardPage() {
     }
   }, [router]);
 
+  // Reset selection when tab changes
+  useEffect(() => {
+    setSelectedUserIds([]);
+  }, [activeTab]);
+
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_user");
-    router.push("/admin/login");
+    router.push("/ks-gateway");
   };
 
   // Helper to format time ago
@@ -213,7 +270,7 @@ export default function AdminDashboardPage() {
       try {
         const token = localStorage.getItem("admin_token");
         if (!token) {
-          router.push("/admin/login");
+          router.push("/");
           return;
         }
 
@@ -227,7 +284,7 @@ export default function AdminDashboardPage() {
         if (response.status === 401 || response.status === 403) {
           localStorage.removeItem("admin_token");
           localStorage.removeItem("admin_user");
-          router.push("/admin/login");
+          router.push("/");
           return;
         }
 
@@ -274,7 +331,8 @@ export default function AdminDashboardPage() {
                 dateJoined: order.createdAt ? new Date(order.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                 weightKg: weightKg || 5.0,
                 cropStage,
-                address
+                address,
+                orderStatus: order.status || "received"
               };
             });
 
@@ -318,7 +376,7 @@ export default function AdminDashboardPage() {
     };
 
     fetchOrders();
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, fetchTrigger]);
 
   const totalRevenue = useMemo(() => {
     return usersList
@@ -379,6 +437,29 @@ export default function AdminDashboardPage() {
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
+    }
+  };
+
+  const filteredOrders = useMemo(() => {
+    return usersList.filter((order) => {
+      const matchesSearch = 
+        order.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.id.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = trackingStatusFilter === "All" || order.orderStatus === trackingStatusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [usersList, searchQuery, trackingStatusFilter]);
+
+  const orderTotalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const orderStartIndex = (ordersPage - 1) * itemsPerPage;
+  const paginatedOrders = filteredOrders.slice(orderStartIndex, orderStartIndex + itemsPerPage);
+
+  const handleOrderPageChange = (page: number) => {
+    if (page >= 1 && page <= orderTotalPages) {
+      setOrdersPage(page);
     }
   };
 
@@ -591,10 +672,25 @@ export default function AdminDashboardPage() {
         
         {/* Sidebar */}
         <aside className={`
-          fixed inset-y-0 left-0 z-30 w-64 bg-white border-r border-stone-200/60 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:block pt-16 lg:pt-8
+          fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-stone-200/60 transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:block pt-4 lg:pt-8
           ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
         `}>
           <div className="px-4 space-y-7">
+            {/* Mobile Header with Close Button */}
+            <div className="flex lg:hidden items-center justify-between pb-4 border-b border-stone-100 pt-2">
+              <div className="flex items-center gap-2 font-bold tracking-tight text-[#78350f] text-sm">
+                <Leaf className="w-4 h-4 text-[#78350f]" />
+                <span>Krushisarthi</span>
+              </div>
+              <button 
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-1 rounded-lg hover:bg-stone-100 text-stone-500 transition-colors"
+                aria-label="Close menu"
+              >
+                <X className="w-4.5 h-4.5" />
+              </button>
+            </div>
+
             <div>
               <p className="px-3 text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-3">Management</p>
               <div className="space-y-1">
@@ -618,6 +714,16 @@ export default function AdminDashboardPage() {
                   <Users className="w-4 h-4" />
                   <span>Users & Payments</span>
                 </button>
+                <button
+                  onClick={() => {
+                    setActiveTab("orders");
+                    setIsSidebarOpen(false);
+                  }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition-all duration-150 ${activeTab === "orders" ? "bg-amber-800/10 text-amber-950 shadow-sm border-l-4 border-amber-800 pl-2" : "text-stone-500 hover:text-stone-900 hover:bg-stone-100/50 border-l-4 border-transparent"}`}
+                >
+                  <Activity className="w-4 h-4" />
+                  <span>Order Tracking</span>
+                </button>
               </div>
             </div>
           </div>
@@ -627,12 +733,12 @@ export default function AdminDashboardPage() {
         {isSidebarOpen && (
           <div 
             onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 z-20 bg-stone-900/30 backdrop-blur-xs lg:hidden"
+            className="fixed inset-0 z-45 bg-stone-900/30 backdrop-blur-xs lg:hidden"
           />
         )}
 
         {/* Main Content Area */}
-        <main className="flex-1 p-6 md:p-8 overflow-x-hidden w-full max-w-[1250px] mx-auto">
+        <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-x-hidden w-full max-w-[1250px] mx-auto">
           <div ref={tabContentRef} className="w-full space-y-8">
             {/* TAB 1: Overview */}
             {activeTab === "overview" && (
@@ -688,7 +794,7 @@ export default function AdminDashboardPage() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 
                 {/* SVG Revenue Chart */}
-                <div className="bg-white border border-stone-200/60 p-5 rounded-2xl shadow-xs lg:col-span-3 flex flex-col justify-between">
+                <div className="bg-white border border-stone-200/60 p-5 rounded-2xl shadow-xs lg:col-span-2 flex flex-col justify-between">
                   <div className="flex items-center justify-between mb-4 border-b border-stone-100 pb-3">
                     <div>
                       <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2">
@@ -792,7 +898,7 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* Recent Activity Log */}
-              <div className="bg-white border border-stone-200/60 rounded-2xl p-5 shadow-xs">
+              <div className="bg-white border border-stone-200/60 rounded-2xl p-5 shadow-xs lg:col-span-1">
                 <div className="flex items-center justify-between mb-4 border-b border-stone-100 pb-3">
                   <div>
                     <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2">
@@ -823,8 +929,8 @@ export default function AdminDashboardPage() {
                           <div className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0">
                             <IconComp className="w-4 h-4 text-stone-600" />
                           </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium text-stone-800 truncate group-hover:text-stone-950 transition-colors">{log.message}</p>
+                          <div className="min-w-0 text-left">
+                            <p className="text-xs font-medium text-stone-800 break-words whitespace-normal group-hover:text-stone-950 transition-colors">{log.message}</p>
                             <div className="flex items-center gap-2 mt-0.5">
                               <span className="text-[10px] text-stone-400">{log.time}</span>
                               <span className="w-1 h-1 rounded-full bg-stone-300"></span>
@@ -908,7 +1014,7 @@ export default function AdminDashboardPage() {
               <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
                 
                 {/* Status Tabs */}
-                <div className="flex border border-stone-200/80 bg-white p-1 rounded-xl w-full sm:w-auto">
+                <div className="flex border border-stone-200/80 bg-white p-1 rounded-xl w-full sm:w-auto overflow-x-auto scrollbar-none whitespace-nowrap">
                   {(["All", "Completed", "Pending", "Failed"] as const).map((status) => (
                     <button
                       key={status}
@@ -916,7 +1022,7 @@ export default function AdminDashboardPage() {
                         setStatusFilter(status);
                         setCurrentPage(1);
                       }}
-                      className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${statusFilter === status ? "bg-[#78350f] text-white shadow-xs" : "text-stone-500 hover:text-stone-800 hover:bg-stone-50"}`}
+                      className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${statusFilter === status ? "bg-[#78350f] text-white shadow-xs" : "text-stone-500 hover:text-stone-800 hover:bg-stone-50"}`}
                     >
                       {status}
                     </button>
@@ -949,7 +1055,7 @@ export default function AdminDashboardPage() {
 
               {/* Data Table */}
               <div className="bg-white border border-stone-200/60 rounded-2xl shadow-xs overflow-hidden">
-                <div className="overflow-x-auto">
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs">
                     <thead>
                       <tr className="bg-stone-50/75 border-b border-stone-200 text-[10px] font-bold uppercase tracking-wider text-stone-400">
@@ -1075,6 +1181,109 @@ export default function AdminDashboardPage() {
                   </table>
                 </div>
 
+                {/* Mobile Responsive Cards View */}
+                <div className="block md:hidden p-4 space-y-4 divide-y divide-stone-100/80">
+                  {paginatedUsers.length > 0 ? (
+                    paginatedUsers.map((user) => {
+                      const initials = user.name.split(" ").map(n => n[0]).join("").slice(0, 2);
+                      
+                      let badgeTheme = "bg-emerald-50 text-emerald-700 border-emerald-200/60";
+                      let dotColor = "bg-emerald-600";
+                      if (user.paymentStatus === "Pending") {
+                        badgeTheme = "bg-amber-50 text-amber-700 border-amber-200/60";
+                        dotColor = "bg-amber-500";
+                      } else if (user.paymentStatus === "Failed") {
+                        badgeTheme = "bg-rose-50 text-rose-700 border-rose-200/60";
+                        dotColor = "bg-rose-600";
+                      }
+
+                      let cropBadge = "bg-stone-100 text-stone-700";
+                      if (user.cropStage === "Seedling") cropBadge = "bg-emerald-50 text-emerald-700 border border-emerald-100";
+                      if (user.cropStage === "Growing") cropBadge = "bg-blue-50 text-blue-700 border border-blue-100";
+                      if (user.cropStage === "Mature") cropBadge = "bg-amber-50 text-amber-700 border border-amber-100";
+                      if (user.cropStage === "Harvested") cropBadge = "bg-stone-200 text-stone-800 border border-stone-300";
+
+                      return (
+                        <div key={user.id} className="pt-4 first:pt-0 text-left space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <input 
+                                type="checkbox" 
+                                className="rounded border-stone-300 text-[#78350f] focus:ring-[#78350f] focus:ring-offset-0 cursor-pointer" 
+                                checked={selectedUserIds.includes(user.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedUserIds(prev => [...prev, user.id]);
+                                  } else {
+                                    setSelectedUserIds(prev => prev.filter(id => id !== user.id));
+                                  }
+                                }}
+                              />
+                              <span className="font-mono font-bold text-stone-600 text-xs">{user.id}</span>
+                            </div>
+                            <div className="flex gap-1.5">
+                              <button
+                                onClick={() => setSelectedUser(user)}
+                                className="p-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 hover:text-[#78350f] transition-all"
+                                title="View User Details"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleSingleDelete(user.id)}
+                                className="p-1.5 rounded-lg border border-stone-200 bg-white hover:bg-rose-50 text-stone-600 hover:text-rose-600 transition-all"
+                                title="Delete Order"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-full bg-amber-800/10 text-amber-950 font-bold flex items-center justify-center text-xs shrink-0 mt-0.5">
+                              {initials}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="font-bold text-stone-900 leading-4">{user.name}</p>
+                              <p className="text-[10px] text-stone-400 mt-0.5">{user.email} • {user.phone}</p>
+                              <p className="text-[10px] text-stone-500 mt-1 truncate bg-stone-50 p-1.5 rounded border border-stone-100" title={user.address}>{user.address}</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-[10px] bg-stone-50/50 p-2 rounded-xl border border-stone-100">
+                            <div>
+                              <span className="text-stone-400 block uppercase font-bold tracking-wider text-[8px]">Weight</span>
+                              <span className="font-semibold text-stone-800">{user.weightKg.toFixed(1)} kg</span>
+                            </div>
+                            <div>
+                              <span className="text-stone-400 block uppercase font-bold tracking-wider text-[8px]">Paid</span>
+                              <span className="font-bold text-stone-950">₹{user.amountPaid.toLocaleString()}</span>
+                            </div>
+                            <div className="mt-1">
+                              <span className="text-stone-400 block uppercase font-bold tracking-wider text-[8px] mb-0.5">Payment</span>
+                              <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full border text-[8px] font-bold ${badgeTheme}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`}></span>
+                                {user.paymentStatus}
+                              </span>
+                            </div>
+                            <div className="mt-1">
+                              <span className="text-stone-400 block uppercase font-bold tracking-wider text-[8px] mb-0.5">Crop Stage</span>
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] font-bold ${cropBadge}`}>
+                                {user.cropStage}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="py-8 text-center text-stone-400">
+                      <Search className="w-6 h-6 text-stone-300 mx-auto mb-2" />
+                      <span className="text-xs">No matching users found.</span>
+                    </div>
+                  )}
+                </div>
+
                 {/* Pagination Footer */}
                 {totalPages > 1 && (
                   <div className="p-4 px-6 border-t border-stone-200/60 bg-stone-50/50 flex items-center justify-between">
@@ -1092,6 +1301,377 @@ export default function AdminDashboardPage() {
                       <button
                         onClick={() => handlePageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
+                        className="p-1.5 border border-stone-200 bg-white rounded-lg hover:bg-stone-50 hover:border-stone-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white shadow-xs"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5 text-stone-600" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 3: Order Tracking */}
+          {activeTab === "orders" && (
+            <div className="space-y-6">
+              
+              {/* Toolbar Section */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-stone-200/60 shadow-xs">
+                <div>
+                  <h2 className="text-lg font-bold text-stone-900 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-amber-800" />
+                    Order Tracking & Fulfilment
+                  </h2>
+                  <p className="text-xs text-stone-400">Track and update crop lifecycle stages and shipping statuses.</p>
+                </div>
+              </div>
+
+              {/* Bulk Actions Panel */}
+              {selectedUserIds.length > 0 && (
+                <div className="bg-amber-50/50 border border-amber-200 rounded-xl p-3.5 px-4 flex flex-col sm:flex-row items-center justify-between gap-3 animate-in slide-in-from-top duration-300">
+                  <div className="flex items-center gap-2 text-amber-950 text-xs font-semibold">
+                    <span className="bg-amber-800 text-white rounded-full w-5 h-5 flex items-center justify-center font-bold text-[10px]">
+                      {selectedUserIds.length}
+                    </span>
+                    <span>orders selected for batch update</span>
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <select
+                      id="bulk-status-select"
+                      defaultValue=""
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val) {
+                          handleStatusUpdate(selectedUserIds, val);
+                          e.target.value = ""; // Reset
+                        }
+                      }}
+                      className="text-xs font-semibold text-stone-700 bg-white border border-stone-200 rounded-lg px-2.5 py-1.5 focus:ring-amber-500 focus:border-amber-500 cursor-pointer w-full sm:w-auto shadow-xs"
+                    >
+                      <option value="" disabled>Change Status to...</option>
+                      <option value="received">Received (Seedling)</option>
+                      <option value="processing">Processing (Growing)</option>
+                      <option value="shipped">Shipped (Mature)</option>
+                      <option value="delivered">Delivered (Harvested)</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                    <button
+                      onClick={() => setSelectedUserIds([])}
+                      className="px-3 py-1.5 border border-stone-200 bg-white text-stone-600 hover:bg-stone-50 text-xs font-semibold rounded-lg transition-colors shrink-0 shadow-xs"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Filters Block */}
+              <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+                
+                {/* Status Tabs */}
+                <div className="flex border border-stone-200/80 bg-white p-1 rounded-xl w-full sm:w-auto overflow-x-auto animate-in fade-in duration-300">
+                  {["All", "received", "processing", "shipped", "delivered", "cancelled"].map((status) => (
+                    <button
+                      key={status}
+                      onClick={() => {
+                        setTrackingStatusFilter(status);
+                        setOrdersPage(1);
+                      }}
+                      className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                        trackingStatusFilter === status 
+                          ? "bg-amber-800 text-white shadow-xs" 
+                          : "text-stone-500 hover:text-stone-800 hover:bg-stone-50"
+                      }`}
+                    >
+                      {status === "All" ? "All Orders" : status.charAt(0).toUpperCase() + status.slice(1)}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative w-full sm:w-64 bg-white border border-stone-200 rounded-xl px-3 py-1.5 flex items-center gap-2 focus-within:ring-2 focus-within:ring-amber-500/20 focus-within:border-amber-500 transition-all shadow-xs">
+                  <Search className="w-4 h-4 text-stone-400 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="Search orders..."
+                    className="bg-transparent border-0 p-0 text-xs focus:ring-0 w-full placeholder-stone-400 text-stone-800 focus:outline-none"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setOrdersPage(1);
+                    }}
+                  />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery("")}
+                      className="p-0.5 rounded-full hover:bg-stone-100 text-stone-400"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Data Table */}
+              <div className="bg-white border border-stone-200/60 rounded-2xl shadow-xs overflow-hidden">
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-stone-50/75 border-b border-stone-200 text-[10px] font-bold uppercase tracking-wider text-stone-400">
+                        <th className="p-4 pl-6 w-10">
+                          <input 
+                            type="checkbox" 
+                            className="rounded border-stone-300 text-amber-800 focus:ring-amber-800 focus:ring-offset-0 cursor-pointer" 
+                            checked={filteredOrders.length > 0 && filteredOrders.every(o => selectedUserIds.includes(o.id))}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedUserIds(filteredOrders.map(o => o.id));
+                              } else {
+                                setSelectedUserIds([]);
+                              }
+                            }}
+                          />
+                        </th>
+                        <th className="p-4">Customer Details</th>
+                        <th className="p-4">Order ID</th>
+                        <th className="p-4">Weight & Value</th>
+                        <th className="p-4">Payment Status</th>
+                        <th className="p-4">Tracking Status</th>
+                        <th className="p-4">Quick Update</th>
+                        <th className="p-4 pr-6 text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-stone-100 text-stone-600">
+                      {paginatedOrders.length > 0 ? (
+                        paginatedOrders.map((order) => {
+                          let statusBadge = "bg-sky-50 text-sky-700 border border-sky-100";
+                          let stageLabel = "Received";
+                          
+                          if (order.orderStatus === "processing") {
+                            statusBadge = "bg-amber-50 text-amber-800 border border-amber-100";
+                            stageLabel = "Processing";
+                          } else if (order.orderStatus === "shipped") {
+                            statusBadge = "bg-orange-50 text-orange-700 border border-orange-100";
+                            stageLabel = "Shipped";
+                          } else if (order.orderStatus === "delivered") {
+                            statusBadge = "bg-emerald-50 text-emerald-700 border border-emerald-100";
+                            stageLabel = "Delivered";
+                          } else if (order.orderStatus === "cancelled") {
+                            statusBadge = "bg-rose-50 text-rose-700 border border-rose-100";
+                            stageLabel = "Cancelled";
+                          }
+
+                          return (
+                            <tr key={order.id} className="hover:bg-stone-50/40 transition-colors">
+                              <td className="p-4 pl-6">
+                                <input 
+                                  type="checkbox" 
+                                  className="rounded border-stone-300 text-amber-800 focus:ring-amber-800 focus:ring-offset-0 cursor-pointer"
+                                  checked={selectedUserIds.includes(order.id)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setSelectedUserIds(prev => [...prev, order.id]);
+                                    } else {
+                                      setSelectedUserIds(prev => prev.filter(id => id !== order.id));
+                                    }
+                                  }}
+                                />
+                              </td>
+                              <td className="p-4 font-medium text-stone-900">
+                                <div>
+                                  <p className="font-bold text-stone-900 text-[13px]">{order.name}</p>
+                                  <p className="text-[10px] text-stone-400 font-light mt-0.5">{order.email} • {order.phone}</p>
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <span className="font-mono bg-stone-100 text-stone-700 px-2 py-0.5 rounded text-[10px] border border-stone-200">
+                                  {order.id}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <p className="font-semibold text-stone-800">₹{order.amountPaid.toLocaleString()}</p>
+                                <p className="text-[10px] text-stone-400 mt-0.5">{order.weightKg} kg Jaggery</p>
+                              </td>
+                              <td className="p-4">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  order.paymentStatus === "Completed" 
+                                    ? "bg-emerald-100 text-emerald-800" 
+                                    : order.paymentStatus === "Failed" 
+                                    ? "bg-rose-100 text-rose-800" 
+                                    : "bg-amber-100 text-amber-800"
+                                }`}>
+                                  {order.paymentStatus}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${statusBadge}`}>
+                                  {stageLabel}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <select
+                                  value={order.orderStatus}
+                                  onChange={(e) => handleStatusUpdate([order.id], e.target.value)}
+                                  className="text-[11px] font-semibold text-stone-700 bg-white border border-stone-200 rounded-lg px-2 py-1 focus:ring-amber-500 focus:border-amber-500 cursor-pointer shadow-2xs"
+                                >
+                                  <option value="received">Received</option>
+                                  <option value="processing">Processing</option>
+                                  <option value="shipped">Shipped</option>
+                                  <option value="delivered">Delivered</option>
+                                  <option value="cancelled">Cancelled</option>
+                                </select>
+                              </td>
+                              <td className="p-4 pr-6 text-center">
+                                <button
+                                  onClick={() => setSelectedUser(order)}
+                                  className="p-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 hover:text-amber-800 hover:border-stone-300 transition-all shadow-xs"
+                                  title="View Order Details"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      ) : (
+                        <tr>
+                          <td colSpan={8} className="p-8 text-center text-stone-400">
+                            <div className="flex flex-col items-center justify-center gap-2">
+                              <Search className="w-6 h-6 text-stone-300" />
+                              <span>No matching orders found matching your filters.</span>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Responsive Cards View */}
+                <div className="block md:hidden p-4 space-y-4 divide-y divide-stone-100/80">
+                  {paginatedOrders.length > 0 ? (
+                    paginatedOrders.map((order) => {
+                      let statusBadge = "bg-sky-50 text-sky-700 border border-sky-100";
+                      let stageLabel = "Received";
+                      
+                      if (order.orderStatus === "processing") {
+                        statusBadge = "bg-amber-50 text-amber-800 border border-amber-100";
+                        stageLabel = "Processing";
+                      } else if (order.orderStatus === "shipped") {
+                        statusBadge = "bg-orange-50 text-orange-700 border border-orange-100";
+                        stageLabel = "Shipped";
+                      } else if (order.orderStatus === "delivered") {
+                        statusBadge = "bg-emerald-50 text-emerald-700 border border-emerald-100";
+                        stageLabel = "Delivered";
+                      } else if (order.orderStatus === "cancelled") {
+                        statusBadge = "bg-rose-50 text-rose-700 border border-rose-100";
+                        stageLabel = "Cancelled";
+                      }
+
+                      return (
+                        <div key={order.id} className="pt-4 first:pt-0 text-left space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <input 
+                                type="checkbox" 
+                                className="rounded border-stone-300 text-amber-800 focus:ring-amber-800 focus:ring-offset-0 cursor-pointer"
+                                checked={selectedUserIds.includes(order.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedUserIds(prev => [...prev, order.id]);
+                                  } else {
+                                    setSelectedUserIds(prev => prev.filter(id => id !== order.id));
+                                  }
+                                }}
+                              />
+                              <span className="font-mono bg-stone-100 text-stone-700 px-2 py-0.5 rounded text-[10px] border border-stone-200">
+                                {order.id}
+                              </span>
+                            </div>
+                            <div>
+                              <button
+                                onClick={() => setSelectedUser(order)}
+                                className="p-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-stone-600 hover:text-amber-800 transition-all shadow-xs"
+                                title="View Order Details"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <p className="font-bold text-stone-900 text-[13px]">{order.name}</p>
+                            <p className="text-[10px] text-stone-400 font-light mt-0.5">{order.email} • {order.phone}</p>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-[10px] bg-stone-50/50 p-2 rounded-xl border border-stone-100">
+                            <div>
+                              <span className="text-stone-400 block uppercase font-bold tracking-wider text-[8px]">Value & Weight</span>
+                              <span className="font-bold text-stone-900">₹{order.amountPaid.toLocaleString()}</span>
+                              <span className="text-[9px] text-stone-500 block">{order.weightKg} kg Jaggery</span>
+                            </div>
+                            <div>
+                              <span className="text-stone-400 block uppercase font-bold tracking-wider text-[8px] mb-0.5">Payment</span>
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] font-bold ${
+                                order.paymentStatus === "Completed" 
+                                  ? "bg-emerald-100 text-emerald-800" 
+                                  : order.paymentStatus === "Failed" 
+                                  ? "bg-rose-100 text-rose-800" 
+                                  : "bg-amber-100 text-amber-800"
+                              }`}>
+                                {order.paymentStatus}
+                              </span>
+                            </div>
+                            <div className="mt-1">
+                              <span className="text-stone-400 block uppercase font-bold tracking-wider text-[8px] mb-0.5">Tracking Status</span>
+                              <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[8px] font-bold ${statusBadge}`}>
+                                {stageLabel}
+                              </span>
+                            </div>
+                            <div className="mt-1">
+                              <span className="text-stone-400 block uppercase font-bold tracking-wider text-[8px] mb-0.5">Quick Update</span>
+                              <select
+                                value={order.orderStatus}
+                                onChange={(e) => handleStatusUpdate([order.id], e.target.value)}
+                                className="text-[10px] font-semibold text-stone-700 bg-white border border-stone-200 rounded px-1.5 py-0.5 focus:ring-amber-500 focus:border-amber-500 cursor-pointer shadow-2xs w-full"
+                              >
+                                <option value="received">Received</option>
+                                <option value="processing">Processing</option>
+                                <option value="shipped">Shipped</option>
+                                <option value="delivered">Delivered</option>
+                                <option value="cancelled">Cancelled</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="py-8 text-center text-stone-400">
+                      <Search className="w-6 h-6 text-stone-300 mx-auto mb-2" />
+                      <span className="text-xs">No matching orders found.</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Pagination Footer */}
+                {orderTotalPages > 1 && (
+                  <div className="p-4 px-6 border-t border-stone-200/60 bg-stone-50/50 flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-stone-400">
+                      Showing {orderStartIndex + 1} to {Math.min(orderStartIndex + itemsPerPage, filteredOrders.length)} of {filteredOrders.length} entries
+                    </span>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => handleOrderPageChange(ordersPage - 1)}
+                        disabled={ordersPage === 1}
+                        className="p-1.5 border border-stone-200 bg-white rounded-lg hover:bg-stone-50 hover:border-stone-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white shadow-xs"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5 text-stone-600" />
+                      </button>
+                      <button
+                        onClick={() => handleOrderPageChange(ordersPage + 1)}
+                        disabled={ordersPage === orderTotalPages}
                         className="p-1.5 border border-stone-200 bg-white rounded-lg hover:bg-stone-50 hover:border-stone-300 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white shadow-xs"
                       >
                         <ChevronRight className="w-3.5 h-3.5 text-stone-600" />
@@ -1246,6 +1826,22 @@ export default function AdminDashboardPage() {
 
                 </div>
               </div>
+            </div>
+
+            {/* Quick Status Update inside Modal */}
+            <div className="border-t border-stone-100 pt-4 flex flex-col gap-2">
+              <label className="text-[10px] font-bold text-stone-400 uppercase tracking-widest text-left">Update Order Status</label>
+              <select
+                value={selectedUser.orderStatus || "received"}
+                onChange={(e) => handleStatusUpdate([selectedUser.id], e.target.value)}
+                className="w-full text-xs font-semibold text-stone-700 bg-white border border-stone-200 rounded-xl px-3 py-2.5 focus:ring-amber-500 focus:border-amber-500 cursor-pointer shadow-xs"
+              >
+                <option value="received">Received (Seedling)</option>
+                <option value="processing">Processing (Growing)</option>
+                <option value="shipped">Shipped (Mature)</option>
+                <option value="delivered">Delivered (Harvested)</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
             </div>
 
             <div className="border-t border-stone-100 pt-4 flex gap-2.5">
