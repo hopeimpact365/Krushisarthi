@@ -5,6 +5,8 @@
  */
 export const getOrderEmailHtml = (order) => {
   const { orderId, customer, shipping, items, financials, paymentMethod, createdAt } = order;
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const trackingLink = `${frontendUrl}/track?id=${orderId}`;
 
   // Format currency helper
   const formatCurrency = (val) => {
@@ -336,16 +338,16 @@ export const getOrderEmailHtml = (order) => {
 
       <!-- Action Button -->
       <div class="btn-container">
-        <a href="http://localhost:3000/orders/track?orderId=${orderId}" class="btn-action">Track Your Order</a>
+        <a href="${trackingLink}" class="btn-action">Track Your Order</a>
       </div>
     </div>
 
     <!-- Footer -->
     <div class="footer">
       <div class="footer-links">
-        <a href="#">Shop</a> |
-        <a href="#">Track Order</a> |
-        <a href="#">Support</a>
+        <a href="${frontendUrl}/select-products">Shop</a> |
+        <a href="${trackingLink}">Track Order</a> |
+        <a href="${frontendUrl}/contact">Support</a>
       </div>
       <p>&copy; ${new Date().getFullYear()} Krushisarthi. All rights reserved.</p>
       <p style="margin-top: 4px;">If you have any questions, please contact us at support@krushisarthi.com</p>

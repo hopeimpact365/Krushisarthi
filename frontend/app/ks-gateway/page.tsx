@@ -173,6 +173,7 @@ export default function AdminLoginPage() {
           src="/admin-hero.png"
           alt="Krushisarthi sugarcane fields at golden hour"
           fill
+          sizes="(max-width: 1024px) 100vw, 52vw"
           className="object-cover"
           priority
         />

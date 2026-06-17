@@ -37,18 +37,24 @@ function TrackOrderContent() {
     // Initial page load animations
     if (!containerRef.current) return;
     const ctx = gsap.context(() => {
-      gsap.fromTo(".track-header", 
-        { opacity: 0, y: 15 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }
-      );
-      gsap.fromTo(".track-input-card",
-        { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.8, delay: 0.15, ease: "power3.out" }
-      );
-      gsap.fromTo(".editorial-sidebar",
-        { opacity: 0, x: -25 },
-        { opacity: 1, x: 0, duration: 0.8, delay: 0.2, ease: "power3.out" }
-      );
+      if (containerRef.current?.querySelector(".track-header")) {
+        gsap.fromTo(".track-header", 
+          { opacity: 0, y: 15 },
+          { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" }
+        );
+      }
+      if (containerRef.current?.querySelector(".track-input-card")) {
+        gsap.fromTo(".track-input-card",
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.8, delay: 0.15, ease: "power3.out" }
+        );
+      }
+      if (containerRef.current?.querySelector(".editorial-sidebar")) {
+        gsap.fromTo(".editorial-sidebar",
+          { opacity: 0, x: -25 },
+          { opacity: 1, x: 0, duration: 0.8, delay: 0.2, ease: "power3.out" }
+        );
+      }
     }, containerRef);
     return () => ctx.revert();
   }, []);
@@ -63,22 +69,28 @@ function TrackOrderContent() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (trackingData && resultsRef.current) {
+    if (trackingData && containerRef.current) {
       // Dynamic tracking results animations when data arrives
       const ctx = gsap.context(() => {
-        gsap.fromTo(".tracking-results-card",
-          { opacity: 0, y: 25 },
-          { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }
-        );
-        gsap.fromTo(".tracking-timeline-step",
-          { opacity: 0, x: -12 },
-          { opacity: 1, x: 0, duration: 0.5, stagger: 0.08, delay: 0.15, ease: "power3.out" }
-        );
-        gsap.fromTo(".purity-certificate-card",
-          { opacity: 0, scale: 0.95 },
-          { opacity: 1, scale: 1, duration: 0.7, delay: 0.25, ease: "power3.out" }
-        );
-      }, resultsRef);
+        if (containerRef.current?.querySelector(".tracking-results-card")) {
+          gsap.fromTo(".tracking-results-card",
+            { opacity: 0, y: 25 },
+            { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }
+          );
+        }
+        if (containerRef.current?.querySelectorAll(".tracking-timeline-step").length) {
+          gsap.fromTo(".tracking-timeline-step",
+            { opacity: 0, x: -12 },
+            { opacity: 1, x: 0, duration: 0.5, stagger: 0.08, delay: 0.15, ease: "power3.out" }
+          );
+        }
+        if (containerRef.current?.querySelector(".purity-certificate-card")) {
+          gsap.fromTo(".purity-certificate-card",
+            { opacity: 0, scale: 0.95 },
+            { opacity: 1, scale: 1, duration: 0.7, delay: 0.25, ease: "power3.out" }
+          );
+        }
+      }, containerRef);
       return () => ctx.revert();
     }
   }, [trackingData]);
