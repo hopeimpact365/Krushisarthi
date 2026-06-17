@@ -11,7 +11,7 @@ export const siteConfig = {
     hours: "Mon - Sat: 9:00 AM - 6:00 PM IST",
   },
   registrations: {
-    fssai: "FSSAI_LICENSE_NUMBER_HERE",
+    fssai: "21521204001152",
     gstin: "GSTIN_NUMBER_HERE",
   },
   links: {

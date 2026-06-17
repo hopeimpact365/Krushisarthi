@@ -102,7 +102,7 @@ export default function AdminDashboardPage() {
     try {
       const token = localStorage.getItem("admin_token");
       if (!token) {
-        router.push("/admin/login");
+        router.push("/");
         return;
       }
 
@@ -138,7 +138,7 @@ export default function AdminDashboardPage() {
     try {
       const token = localStorage.getItem("admin_token");
       if (!token) {
-        router.push("/admin/login");
+        router.push("/");
         return;
       }
 
@@ -171,7 +171,7 @@ export default function AdminDashboardPage() {
     try {
       const token = localStorage.getItem("admin_token");
       if (!token) {
-        router.push("/admin/login");
+        router.push("/");
         return;
       }
 
@@ -220,7 +220,7 @@ export default function AdminDashboardPage() {
     const token = localStorage.getItem("admin_token");
     const userStr = localStorage.getItem("admin_user");
     if (!token) {
-      router.push("/admin/login");
+      router.push("/");
       return;
     }
     setIsAuthenticated(true);
@@ -241,7 +241,7 @@ export default function AdminDashboardPage() {
   const handleLogout = () => {
     localStorage.removeItem("admin_token");
     localStorage.removeItem("admin_user");
-    router.push("/admin/login");
+    router.push("/ks-gateway");
   };
 
   // Helper to format time ago
@@ -270,7 +270,7 @@ export default function AdminDashboardPage() {
       try {
         const token = localStorage.getItem("admin_token");
         if (!token) {
-          router.push("/admin/login");
+          router.push("/");
           return;
         }
 
@@ -284,7 +284,7 @@ export default function AdminDashboardPage() {
         if (response.status === 401 || response.status === 403) {
           localStorage.removeItem("admin_token");
           localStorage.removeItem("admin_user");
-          router.push("/admin/login");
+          router.push("/");
           return;
         }
 

@@ -269,7 +269,7 @@ export default function GalleryPage() {
               Support the village collective
             </h2>
             <p className="mt-1 text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
-              Pure, heritage sweetness — pre-book directly from the farmers of Karbharwadi.
+              Pure, heritage sweetness, pre-book directly from the farmers of Karbharwadi.
             </p>
           </div>
           <Link href="/select-products"

@@ -100,18 +100,6 @@ export default function AdminLoginPage() {
       "-=0.25"
     );
     tl.fromTo(
-      ".form-divider",
-      { opacity: 0 },
-      { opacity: 1, duration: 0.45 },
-      "-=0.15"
-    );
-    tl.fromTo(
-      ".form-cred-card",
-      { y: 12, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.45, stagger: 0.1 },
-      "-=0.2"
-    );
-    tl.fromTo(
       ".form-footer",
       { opacity: 0 },
       { opacity: 1, duration: 0.5 },
@@ -170,7 +158,7 @@ export default function AdminLoginPage() {
 
   return (
     <div
-      className="h-screen max-h-screen w-full flex overflow-hidden select-none"
+      className="min-h-screen w-full flex select-none"
       style={{ fontFamily: "'DM Sans', system-ui, sans-serif" }}
     >
       {/* ══════════════════════════════════════════════════════════
@@ -178,7 +166,7 @@ export default function AdminLoginPage() {
       ══════════════════════════════════════════════════════════ */}
       <div
         ref={leftRef}
-        className="hidden lg:flex lg:w-[52%] relative overflow-hidden flex-shrink-0 h-full"
+        className="hidden lg:flex lg:w-[52%] relative overflow-hidden flex-shrink-0 min-h-screen"
         style={{ opacity: 0 }} /* GSAP takes over */
       >
         <Image
@@ -252,7 +240,7 @@ export default function AdminLoginPage() {
               style={{ color: "rgba(255,255,255,0.55)", fontWeight: 400, opacity: 0 }}
             >
               Oversee orders, track harvest batches, and monitor the livelihoods
-              of 132 farming families — all from one secure portal.
+              of 132 farming families, all from one secure portal.
             </p>
           </div>
 
@@ -264,7 +252,7 @@ export default function AdminLoginPage() {
             {[
               { value: "132", label: "Families Supported" },
               { value: "GI",  label: "Tagged Kolhapur"   },
-              { value: "0%",  label: "Chemical Additives" },
+              { value: "0%",  label: "Artificial Additives" },
             ].map(({ value, label }) => (
               <div key={label} className="left-stat" style={{ opacity: 0 }}>
                 <p
@@ -290,7 +278,7 @@ export default function AdminLoginPage() {
       ══════════════════════════════════════════════════════════ */}
       <div
         ref={rightRef}
-        className="flex-1 flex flex-col items-center justify-center px-6 py-6 md:py-10 relative h-full overflow-hidden"
+        className="flex-1 flex flex-col items-center justify-center px-6 py-6 md:py-10 relative min-h-screen"
         style={{ background: "#FAF7F2", opacity: 0 }}
       >
         {/* Warm radial accent — top-right */}
@@ -466,48 +454,6 @@ export default function AdminLoginPage() {
               )}
             </button>
           </form>
-
-          {/* Divider */}
-          <div className="form-divider my-5 flex items-center gap-3" style={{ opacity: 0 }}>
-            <div className="flex-1 h-px" style={{ background: "#E4D8C8" }} />
-            <span
-              className="text-[9px] font-semibold tracking-widest uppercase"
-              style={{ color: "#C9AA7C", letterSpacing: "0.13em" }}
-            >
-              dev credentials
-            </span>
-            <div className="flex-1 h-px" style={{ background: "#E4D8C8" }} />
-          </div>
-
-          {/* Autofill credential cards */}
-          <div
-            className="rounded-xl p-3 space-y-1.5"
-            style={{ background: "#F1E6D2", border: "1px solid #E4D8C8" }}
-          >
-            {[
-              { label: "Admin 1", e: "admin1@krushisarthi.com", p: "admin1password123" },
-              { label: "Admin 2", e: "admin2@krushisarthi.com", p: "admin2password456" },
-            ].map(({ label, e, p }) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => { setEmail(e); setPassword(p); setError(""); }}
-                className="form-cred-card w-full text-left px-3 py-2 rounded-lg text-[11px] transition-all hover:opacity-80"
-                style={{
-                  background: "rgba(255,255,255,0.72)",
-                  border: "1px solid rgba(139,90,43,0.12)",
-                  opacity: 0,
-                }}
-              >
-                <span className="font-semibold" style={{ color: "#5A3A1A" }}>{label}</span>
-                <span className="ml-2 font-mono" style={{ color: "#8A7660" }}>{e}</span>
-              </button>
-            ))}
-            <p className="text-[9px] text-center pt-0.5" style={{ color: "#B5A28C" }}>
-              Click a row to autofill credentials
-            </p>
-          </div>
-
           {/* Footer note */}
           <p className="form-footer text-center text-[10px] mt-6" style={{ color: "#C5B49A", opacity: 0 }}>
             © {new Date().getFullYear()} Krushisarthi Farmer Producer Collective

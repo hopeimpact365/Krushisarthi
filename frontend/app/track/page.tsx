@@ -153,7 +153,7 @@ function TrackOrderContent() {
           time: seed >= 3 ? "Completed" : status === "cancelled" ? "N/A" : seed === 2 ? "In Progress" : "Scheduled",
           status: seed >= 3 ? "completed" : status === "cancelled" ? "upcoming" : seed === 2 ? "current" : "upcoming",
           icon: Flame,
-          educationalQuote: "Boiled slowly over wood-fire pits, clarified using organic okra extracts with zero added chemical colorings."
+          educationalQuote: "Boiled slowly over wood-fire pits, clarified using organic okra extracts with zero added artificial colorings."
         },
         {
           title: "Quality Checks & Packaging",
@@ -321,7 +321,7 @@ function TrackOrderContent() {
                   <Leaf className="w-4 h-4 text-secondary shrink-0 mt-0.5" />
                   <div>
                     <h4 className="font-bold text-foreground text-sm">Organic Cane Cultivation</h4>
-                    <p className="mt-1">Grown in fertile black soils using composted biological manure, free from chemical pesticides.</p>
+                    <p className="mt-1">Grown in fertile black soils using composted biological manure, free from synthetic pesticides.</p>
                   </div>
                 </div>
 
@@ -345,7 +345,7 @@ function TrackOrderContent() {
               <div className="bg-muted/40 rounded-xl p-4 border border-border/60 flex items-center gap-3">
                 <ShieldCheck className="w-5 h-5 text-primary shrink-0" />
                 <p className="text-[10px] text-muted-foreground font-medium leading-relaxed">
-                  FSSAI Registered: <strong className="text-foreground">License No. 11524036000123</strong>. Fully compliant with natural food production standards.
+                  FSSAI Registered: <strong className="text-foreground">License No. 21521204001152</strong>. Fully compliant with natural food production standards.
                 </p>
               </div>
             </div>
@@ -404,7 +404,7 @@ function TrackOrderContent() {
                   </div>
                   <div>
                     <span className="text-muted-foreground block text-[9px] font-bold uppercase tracking-wider">Preservatives</span>
-                    <strong className="text-foreground text-xs font-bold font-serif text-secondary">0.00% (Chemical-Free)</strong>
+                    <strong className="text-foreground text-xs font-bold font-serif text-secondary">0.00% (100% Pure)</strong>
                   </div>
                   <div>
                     <span className="text-muted-foreground block text-[9px] font-bold uppercase tracking-wider">Sucrose Index</span>
@@ -422,7 +422,7 @@ function TrackOrderContent() {
                     <ShieldCheck className="w-5 h-5 text-secondary" />
                     <span className="text-[9px] font-bold uppercase text-muted-foreground leading-tight">
                       FSSAI Lic. <br />
-                      <strong className="text-foreground font-mono">11524036000123</strong>
+                      <strong className="text-foreground font-mono">21521204001152</strong>
                     </span>
                   </div>
                   <div className="text-right border-t border-primary/20 pt-1">

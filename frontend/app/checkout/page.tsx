@@ -93,7 +93,14 @@ const loadRazorpayScript = () => {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, getSubtotal, updateOrderDetails } = useCart();
+  const { items, getSubtotal, updateOrderDetails, getTotalWeight } = useCart();
+  const totalWeight = getTotalWeight();
+
+  useEffect(() => {
+    if (Math.abs(totalWeight - 5.0) > 0.01) {
+      router.replace("/select-products");
+    }
+  }, [totalWeight, router]);
   const { showToast } = useToast();
 
   const [mobile, setMobile] = useState("");

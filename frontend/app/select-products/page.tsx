@@ -110,11 +110,10 @@ export default function SelectProductsPage() {
             {items.map((product) => (
               <div
                 key={product.id}
-                className={`group bg-card border rounded-2xl p-5 md:p-6 flex flex-col sm:flex-row gap-6 items-center justify-between shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 select-product-card opacity-0 ${
-                  product.quantity > 0
-                    ? "border-primary bg-primary/[0.01]"
-                    : "border-border hover:border-primary/20"
-                }`}
+                className={`group bg-card border rounded-2xl p-5 md:p-6 flex flex-col sm:flex-row gap-6 items-center justify-between shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 select-product-card opacity-0 ${product.quantity > 0
+                  ? "border-primary bg-primary/[0.01]"
+                  : "border-border hover:border-primary/20"
+                  }`}
               >
                 {/* Left: Product Image */}
                 <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden border border-border shrink-0 bg-muted flex items-center justify-center">
@@ -142,7 +141,7 @@ export default function SelectProductsPage() {
                 <div className="flex flex-col items-center sm:items-end gap-3.5 w-full sm:w-auto shrink-0 border-t sm:border-t-0 pt-4 sm:pt-0 border-border/60">
                   <div className="flex flex-col gap-1.5 items-center sm:items-end w-full sm:w-auto">
                     <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Quantity (kg)</span>
-                    
+
                     {/* Premium Stepper-Input Component */}
                     <div className="flex items-stretch bg-background border border-border rounded-xl shadow-sm overflow-hidden h-11 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all w-36">
                       <button
@@ -154,7 +153,7 @@ export default function SelectProductsPage() {
                       >
                         <Minus className="w-4.5 h-4.5" />
                       </button>
-                      
+
                       <div className="flex items-center justify-center px-1">
                         <input
                           type="number"
@@ -168,7 +167,7 @@ export default function SelectProductsPage() {
                         />
                         <span className="text-muted-foreground text-xs font-semibold select-none">kg</span>
                       </div>
-                      
+
                       <button
                         type="button"
                         onClick={() => handleQuantityUpdate(product.id, product.quantity + 0.5)}
@@ -200,7 +199,7 @@ export default function SelectProductsPage() {
               <ShoppingBag className="w-5 h-5 text-primary" />
               <span>Order Summary</span>
             </h2>
-            
+
             <div className="flex flex-col gap-4">
               {/* Weight section with visual gauge */}
               <div className="flex flex-col gap-2">
@@ -210,24 +209,23 @@ export default function SelectProductsPage() {
                     {totalWeight.toFixed(1)} / 5.0 kg
                   </span>
                 </div>
-                
+
                 {/* Progress gauge */}
                 <div className="w-full bg-muted h-2.5 rounded-full overflow-hidden border border-border/40">
                   <div
-                    className={`h-full transition-all duration-300 rounded-full ${
-                      totalWeight === 0
-                        ? "w-0"
-                        : isOverLimit
+                    className={`h-full transition-all duration-300 rounded-full ${totalWeight === 0
+                      ? "w-0"
+                      : isOverLimit
                         ? "bg-destructive w-full"
                         : totalWeight > 4.0
-                        ? "bg-accent"
-                        : "bg-success"
-                    }`}
+                          ? "bg-accent"
+                          : "bg-success"
+                      }`}
                     style={{ width: `${Math.min(100, (totalWeight / 5.0) * 100)}%` }}
                   />
                 </div>
               </div>
-              
+
               {/* Divider */}
               <div className="h-px bg-border/60 my-1" />
 
@@ -236,7 +234,7 @@ export default function SelectProductsPage() {
                 <span className="text-muted-foreground text-sm font-medium">Subtotal</span>
                 <span className="text-2xl font-extrabold text-foreground">₹{subtotal.toFixed(2)}</span>
               </div>
-              
+
               {/* Extra info/badges */}
               <div className="flex flex-col gap-2.5 bg-muted/40 rounded-xl p-3.5 text-xs text-muted-foreground border border-border/60">
                 <div className="flex items-center gap-2">
@@ -250,6 +248,15 @@ export default function SelectProductsPage() {
               </div>
             </div>
 
+            {totalWeight < 5.0 && (
+              <div className="bg-primary/5 border border-primary/20 text-primary p-4 rounded-xl flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 mt-0.5 shrink-0 text-primary" />
+                <p className="text-xs font-semibold leading-relaxed text-left">
+                  To ensure optimal shipping and farm-direct logistics, we require an order of exactly <span className="font-bold underline">5.0 kg</span>. Please add {(5.0 - totalWeight).toFixed(1)} kg more.
+                </p>
+              </div>
+            )}
+
             {isOverLimit && (
               <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-xl flex items-start gap-3 animate-pulse">
                 <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
@@ -262,7 +269,7 @@ export default function SelectProductsPage() {
             <div className="flex flex-col gap-3 mt-4">
               <button
                 onClick={() => router.push("/checkout")}
-                disabled={isOverLimit || totalWeight === 0}
+                disabled={Math.abs(totalWeight - 5.0) > 0.01}
                 className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 hover:bg-amber-900 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none shadow-sm shadow-primary/20"
               >
                 Proceed to Checkout
@@ -303,7 +310,8 @@ export default function SelectProductsPage() {
       )}
 
       {/* Global CSS for toast animation */}
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes toast-slide-in {
           from { transform: translateY(1.5rem) scale(0.95); opacity: 0; }
           to { transform: translateY(0) scale(1); opacity: 1; }

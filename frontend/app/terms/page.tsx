@@ -20,7 +20,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-2xl font-semibold text-foreground mb-3">2. Description of Service</h2>
           <p>
-            {siteConfig.name} offers a platform where users can book individual sugarcane farm plots to observe the farming process, and purchase high-quality, chemical-free organic jaggery products (Jaggery Bars, Jaggery Cubes, and Jaggery Powder).
+            {siteConfig.name} offers a platform where users can book individual sugarcane farm plots to observe the farming process, and purchase high-quality, 100% pure organic jaggery products (Jaggery Bars, Jaggery Cubes, and Jaggery Powder).
           </p>
         </section>
 

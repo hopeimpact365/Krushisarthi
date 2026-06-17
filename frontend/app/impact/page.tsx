@@ -11,7 +11,7 @@ gsap.registerPlugin(ScrollTrigger);
 const metrics = [
   { Icon: Users,    val: "132+", label: "Farmer Families",  desc: "Earning sustainable, above-market pricing from jaggery collective operations." },
   { Icon: Droplet,  val: "40%",  label: "Water Conserved",  desc: "Saved through centralized automated community drip irrigation." },
-  { Icon: Sprout,   val: "100%", label: "Chemical-Free",    desc: "Bio-fertilizers and botanical extracts replace all toxic chemical pesticides." },
+  { Icon: Sprout,   val: "100%", label: "Pure Organic",    desc: "Bio-fertilizers and botanical extracts replace all toxic synthetic pesticides." },
   { Icon: TrendingUp, val: "35%+", label: "Income Growth",  desc: "Average net income increase per household by bypassing APMC middlemen." },
 ];
 
@@ -230,7 +230,7 @@ export default function ImpactPage() {
               While male members focus on sugarcane cultivation, local women manage processing, sorting, quality control, and packing of jaggery bars, cubes, and powders.
             </p>
             <p className="text-sm leading-relaxed" style={{ color: "#5C5C5C" }}>
-              Over 40% of all processing wages go directly to women — fostering financial independence and giving women a major voice in the Farmer Producer Company&apos;s governance.
+              Over 40% of all processing wages go directly to women, fostering financial independence and giving women a major voice in the Farmer Producer Company&apos;s governance.
             </p>
             <div className="flex gap-8 pt-2">
               {[["100+", "Women employed"], ["40%", "Wages to women"], ["₹8,000", "Avg. monthly income"]].map(([v, l]) => (
@@ -269,7 +269,7 @@ export default function ImpactPage() {
           <div className="border-l-2 pl-6 py-2 gov-quote opacity-0" style={{ borderColor: "#D4A24C" }}>
             <Award className="w-6 h-6 mb-4" style={{ color: "#D4A24C" }} />
             <p className="text-base italic leading-relaxed" style={{ fontFamily: "var(--font-display)", color: "#2B2B2B" }}>
-              &ldquo;The cooperative water sharing, high-tech greenhouses, and clean chemical-free processing unit run by local women SHGs at Karbharwadi is a benchmark. It is a model that other talukas must replicate.&rdquo;
+              &ldquo;The cooperative water sharing, high-tech greenhouses, and clean, organic processing unit run by local women SHGs at Karbharwadi is a benchmark. It is a model that other talukas must replicate.&rdquo;
             </p>
             <div className="mt-4 pt-4 border-t" style={{ borderColor: "#E5D9C4" }}>
               <p className="text-xs font-bold" style={{ color: "#2B2B2B" }}>Rahul Rekhawar</p>
@@ -287,7 +287,7 @@ export default function ImpactPage() {
               Support direct rural empowerment
             </h2>
             <p className="mt-1 text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>
-              100% of proceeds flow to the Farmer Producer Company — funding sustainable farming and village education.
+              100% of proceeds flow to the Farmer Producer Company, funding sustainable farming and village education.
             </p>
           </div>
           <div className="flex flex-wrap gap-3 shrink-0">
