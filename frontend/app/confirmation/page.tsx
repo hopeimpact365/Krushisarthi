@@ -615,10 +615,10 @@ function ConfirmationContent() {
             {/* Navigation Actions */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
               <Link
-                href="/my-farm"
+                href="/track"
                 className="py-3.5 bg-amber-900 hover:bg-amber-950 text-white rounded-xl font-bold text-xs text-center transition-all duration-200 block shadow-sm shadow-amber-900/15"
               >
-                View Your Farm
+                Track Your Order
               </Link>
               <Link
                 href="/"

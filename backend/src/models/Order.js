@@ -111,14 +111,22 @@ const OrderSchema = new mongoose.Schema({
     enum: ['pending', 'paid', 'failed'],
     default: 'pending'
   },
+  razorpayOrderId: {
+    type: String,
+    trim: true
+  },
+  razorpayPaymentId: {
+    type: String,
+    trim: true
+  },
+  razorpaySignature: {
+    type: String,
+    trim: true
+  },
   status: {
     type: String,
     enum: ['received', 'processing', 'shipped', 'delivered', 'cancelled'],
     default: 'received'
-  },
-  easebuzzInvoiceId: {
-    type: String,
-    trim: true
   }
 }, {
   timestamps: true
