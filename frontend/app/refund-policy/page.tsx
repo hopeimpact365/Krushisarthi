@@ -38,7 +38,7 @@ export default function RefundPolicyPage() {
             Once a refund is approved by our compliance team:
           </p>
           <ul className="list-disc pl-6 space-y-2">
-            <li>The refund will be processed and automatically applied to your original method of payment (via our payment partner, Razorpay).</li>
+            <li>The refund will be processed and automatically applied to your original method of payment (via our payment partner, Easebuzz).</li>
             <li>Refunds typically take **5 to 7 business days** to reflect in your bank account, credit card, or payment wallet, depending on bank processing cycles.</li>
             <li>We do not charge any transaction fee or processing fee for valid refunds.</li>
           </ul>

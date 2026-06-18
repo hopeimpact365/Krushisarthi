@@ -5,7 +5,7 @@ export const siteConfig = {
   url: "https://krushisarthi.in",
   ogImage: "https://krushisarthi.in/og.jpg",
   contact: {
-    email: "support@krushisarthi.in",
+    email: "krushisarthijaggery@gmail.com",
     phone: "+91 8149418625",
     address: "Karbharwadi, Tal. Karveer, Dist. Kolhapur, Maharashtra, India - 416001",
     hours: "Mon - Sat: 9:00 AM - 6:00 PM IST",

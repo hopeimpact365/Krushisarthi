@@ -243,7 +243,7 @@ export default function SelectProductsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-3.5 h-3.5 text-success shrink-0" />
-                  <span>Secure checkout via Razorpay</span>
+                  <span>Secure checkout via Easebuzz</span>
                 </div>
               </div>
             </div>

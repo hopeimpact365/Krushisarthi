@@ -45,7 +45,7 @@ export default function PrivacyPage() {
             We do not sell your personal data. To fulfill your transactions, we share your data with trusted partners:
           </p>
           <ul className="list-disc pl-6 space-y-2">
-            <li><strong>Payment Gateways:</strong> We use third-party payment gateways (such as Razorpay) to process payments securely. Your financial data is not stored on our servers.</li>
+            <li><strong>Payment Gateways:</strong> We use third-party payment gateways (such as Easebuzz) to process payments securely. Your financial data is not stored on our servers.</li>
             <li><strong>Delivery Partners:</strong> We share your name, phone number, and address with courier and logistics partners to deliver products to your doorstep.</li>
           </ul>
         </section>
