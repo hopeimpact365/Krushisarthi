@@ -116,7 +116,7 @@ export default function SelectProductsPage() {
                   }`}
               >
                 {/* Left: Product Image */}
-                <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden border border-border shrink-0 bg-muted flex items-center justify-center">
+                <div className="relative w-28 sm:w-36 aspect-[16/9] rounded-xl overflow-hidden border border-border shrink-0 bg-muted flex items-center justify-center">
                   <img
                     src={product.image}
                     alt={product.name}

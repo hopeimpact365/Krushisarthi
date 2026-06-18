@@ -506,11 +506,13 @@ function ConfirmationContent() {
                   <div key={item.id} className="py-3.5 flex items-center justify-between first:pt-0 last:pb-0 gap-4">
                     <div className="flex items-center gap-3.5 min-w-0">
                       {item.image ? (
-                        <img 
-                          src={item.image} 
-                          alt={item.name} 
-                          className="w-12 h-12 rounded-xl object-cover border border-neutral-200 shrink-0" 
-                        />
+                        <div className="w-16 aspect-[16/9] rounded-xl overflow-hidden border border-neutral-200 shrink-0">
+                          <img 
+                            src={item.image} 
+                            alt={item.name} 
+                            className="w-full h-full object-cover" 
+                          />
+                        </div>
                       ) : (
                         <div className="w-12 h-12 rounded-xl bg-amber-50 border border-neutral-200 shrink-0 flex items-center justify-center text-amber-900 font-bold">
                           J

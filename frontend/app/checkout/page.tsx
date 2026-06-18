@@ -591,7 +591,7 @@ export default function CheckoutPage() {
             <div className="space-y-4 mb-6 max-h-60 overflow-y-auto pr-2">
               {items.filter((item) => item.quantity > 0).map((item) => (
                 <div key={item.id} className="flex items-center gap-4">
-                  <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-border shrink-0 bg-muted">
+                  <div className="relative w-20 aspect-[16/9] rounded-lg overflow-hidden border border-border shrink-0 bg-muted">
                     <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
                     <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full z-10">
                       {item.quantity}

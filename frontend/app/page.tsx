@@ -447,7 +447,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {products.map((p) => (
               <div key={p.id} className="hover-lift group flex flex-col border border-[#E5D9C4] rounded-xl overflow-hidden bg-[#FAF6EE] product-card opacity-0">
-                <div className="aspect-[4/3] overflow-hidden bg-[#F1E6D2]">
+                <div className="aspect-[16/9] overflow-hidden bg-[#F1E6D2]">
                   <img src={p.img} alt={p.name} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
                 </div>
                 <div className="p-5 flex flex-col justify-between flex-1">
