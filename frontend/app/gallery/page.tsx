@@ -52,10 +52,10 @@ const images = [
 ];
 
 const videos = [
-  { title: "Traditional Jaggery Production Process", url: "https://youtu.be/M95aPahn_ig", dur: "4:12" },
-  { title: "Karbharwadi Model Village Transformation", url: "https://youtu.be/AgbRQFec_5M", dur: "5:45" },
-  { title: "Farmer Collective & Sustainable Irrigation", url: "https://youtu.be/tfvGfJw60Q", dur: "4:50" },
-  { title: "Founder & Farmer Interview", url: "https://youtu.be/hCJWoho7D2U", dur: "7:30" },
+  { title: "Traditional Jaggery Production Process", url: "https://youtu.be/M95aPahn_ig", dur: "24:41" },
+  { title: "Karbharwadi Model Village Transformation", url: "https://youtu.be/AgbRQFeo_5M", dur: "7:54" },
+  { title: "Farmer Collective & Sustainable Irrigation", url: "https://youtu.be/tfvGfjJw60Q", dur: "6:24" },
+  { title: "Founder & Farmer Interview", url: "https://youtu.be/hCjWoho7D2U", dur: "87:17" },
 ];
 
 export default function GalleryPage() {

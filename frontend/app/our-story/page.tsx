@@ -206,7 +206,7 @@ export default function OurStoryPage() {
           </div>
           <div className="aspect-[4/3] rounded-xl overflow-hidden genesis-img opacity-0" style={{ boxShadow: "0 4px 20px -4px rgba(139,90,43,0.12)" }}>
             <img
-              src="https://images.unsplash.com/photo-1584924697295-04b327168144?w=800&q=80"
+              src="/images/bars.png"
               alt="Traditional sugarcane boil"
               className="w-full h-full object-cover"
             />

@@ -9,9 +9,9 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 const products = [
-  { id: "bar",    name: "Jaggery Bar",    form: "Solid block",  price: 199, img: "https://images.unsplash.com/photo-1584924697295-04b327168144?w=600&q=80" },
-  { id: "cube",   name: "Jaggery Cubes",  form: "Bite-sized",   price: 249, img: "https://images.unsplash.com/photo-1671846534165-dc2e8bf8de87?w=600&q=80" },
-  { id: "powder", name: "Jaggery Powder", form: "Finely ground", price: 249, img: "https://images.unsplash.com/photo-1613228295977-3b5ac7533b36?w=600&q=80" },
+  { id: "bar",    name: "Jaggery Bar",    form: "Solid block",  price: 199, img: "/images/bars.png" },
+  { id: "cube",   name: "Jaggery Cubes",  form: "Bite-sized",   price: 249, img: "/images/cubes.png" },
+  { id: "powder", name: "Jaggery Powder", form: "Finely ground", price: 249, img: "/images/powder.png" },
 ];
 
 const faqs = [
@@ -526,10 +526,10 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {[
-              { t: "Traditional Jaggery Production", d: "Inside the traditional 'gurhalghar', from cane juice to golden blocks.", u: "https://youtu.be/M95aPahn_ig", dur: "4 min" },
-              { t: "The Model Village Initiative",   d: "How Karbharwadi built self-reliance with greenhouses, solar, and drip lines.", u: "https://youtu.be/AgbRQFec_5M", dur: "6 min" },
-              { t: "FPO & Community Irrigation",     d: "132 farmers, one water system, the story of collective farming.", u: "https://youtu.be/tfvGfJw60Q", dur: "5 min" },
-              { t: "Founder & Farmer Interview",     d: "Nachiket and Dr. Netaji Patil on heritage, crisis, and revival.", u: "https://youtu.be/hCJWoho7D2U", dur: "8 min" },
+              { t: "Traditional Jaggery Production", d: "Inside the traditional 'gurhalghar', from cane juice to golden blocks.", u: "https://youtu.be/M95aPahn_ig", dur: "24 min" },
+              { t: "The Model Village Initiative",   d: "How Karbharwadi built self-reliance with greenhouses, solar, and drip lines.", u: "https://youtu.be/AgbRQFeo_5M", dur: "8 min" },
+              { t: "FPO & Community Irrigation",     d: "132 farmers, one water system, the story of collective farming.", u: "https://youtu.be/tfvGfjJw60Q", dur: "6 min" },
+              { t: "Founder & Farmer Interview",     d: "Nachiket and Dr. Netaji Patil on heritage, crisis, and revival.", u: "https://youtu.be/hCjWoho7D2U", dur: "87 min" },
             ].map(({ t, d, u, dur }) => (
               <a key={t} href={u} target="_blank" rel="noopener noreferrer"
                 className="hover-lift flex gap-4 p-5 border border-[#E5D9C4] rounded-xl bg-[#FAF6EE] group video-card opacity-0">

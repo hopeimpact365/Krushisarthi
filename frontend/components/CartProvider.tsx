@@ -38,9 +38,9 @@ interface CartContextType {
 
 // Default items setup
 const defaultItems: CartItem[] = [
-  { id: "bar", name: "Jaggery Bar", price: 199, quantity: 0, image: "https://images.unsplash.com/photo-1584924697295-04b327168144?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600" },
-  { id: "cube", name: "Jaggery Cube", price: 249, quantity: 0, image: "https://images.unsplash.com/photo-1671846534165-dc2e8bf8de87?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600" },
-  { id: "powder", name: "Jaggery Powder", price: 249, quantity: 0, image: "https://images.unsplash.com/photo-1613228295977-3b5ac7533b36?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600" },
+  { id: "bar", name: "Jaggery Bar", price: 199, quantity: 0, image: "/images/bars.png" },
+  { id: "cube", name: "Jaggery Cube", price: 249, quantity: 0, image: "/images/cubes.png" },
+  { id: "powder", name: "Jaggery Powder", price: 249, quantity: 0, image: "/images/powder.png" },
 ];
 
 const CartContext = createContext<CartContextType | undefined>(undefined);

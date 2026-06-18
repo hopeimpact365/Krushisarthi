@@ -81,9 +81,9 @@ Below are the exact image URLs used to display farm-fresh organic aesthetics:
 | Context | Unsplash Image URL | Description |
 | :--- | :--- | :--- |
 | **Hero Background** | `https://images.unsplash.com/photo-1606707761700-86b58f251a01?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1920` | Sugarcane farm field, wide angle |
-| **Jaggery Bars** | `https://images.unsplash.com/photo-1584924697295-04b327168144?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600` | Traditional solid jaggery bars |
-| **Jaggery Cubes** | `https://images.unsplash.com/photo-1671846534165-dc2e8bf8de87?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600` | Refined square jaggery cubes |
-| **Jaggery Powder** | `https://images.unsplash.com/photo-1613228295977-3b5ac7533b36?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=600` | Ground jaggery powder |
+| **Jaggery Bars** | `/images/bars.png` | Traditional solid jaggery bars |
+| **Jaggery Cubes** | `/images/cubes.png` | Refined square jaggery cubes |
+| **Jaggery Powder** | `/images/powder.png` | Ground jaggery powder |
 | **Farm Gallery - Plantation** | `https://images.unsplash.com/photo-1606707761700-86b58f251a01?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200` | Green plantation rows |
 | **Farm Gallery - Harvest** | `https://images.unsplash.com/photo-1709535349666-1f9eb563b3cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200` | Agricultural workers cutting cane |
 | **Farming Step 1 (Planting)** | `https://images.unsplash.com/photo-1606707761801-0d68d6bdffdf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400` | Sugarcane stems planted in mud |
