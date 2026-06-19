@@ -1,28 +1,17 @@
 import express from 'express';
 import crypto from 'crypto';
 import Order from '../models/Order.js';
-import { createRazorpayClient, getRazorpayKeyId } from '../config/razorpay.js';
+import { getEasebuzzCredentials, generateEasebuzzHash, verifyEasebuzzResponseHash } from '../config/easebuzz.js';
 import { sendOrderConfirmationEmail } from '../config/resend.js';
-
 
 const router = express.Router();
 
-const normalizeAmount = (value) => {
-  const amount = Number(value);
-
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return null;
-  }
-
-  return Math.round(amount * 100);
-};
-
 // @route   POST /api/payments/order
-// @desc    Create a Razorpay order for a saved checkout order
+// @desc    Initiate an Easebuzz payment for a saved checkout order
 // @access  Public
 router.post('/order', async (req, res) => {
   try {
-    const { orderId, currency = 'INR' } = req.body;
+    const { orderId } = req.body;
 
     if (!orderId || typeof orderId !== 'string') {
       return res.status(400).json({
@@ -40,43 +29,97 @@ router.post('/order', async (req, res) => {
       });
     }
 
-    const amountInPaise = normalizeAmount(order.financials?.total);
-
-    if (!amountInPaise) {
+    const totalAmount = order.financials?.total;
+    if (!totalAmount || totalAmount <= 0) {
       return res.status(400).json({
         success: false,
         message: 'Order total is invalid and cannot be charged.'
       });
     }
 
-    const razorpay = createRazorpayClient();
-    const razorpayOrder = await razorpay.orders.create({
-      amount: amountInPaise,
-      currency,
-      receipt: order.orderId,
-      notes: {
-        orderId: order.orderId,
-        customerName: order.customer.name,
-        customerEmail: order.customer.email
-      }
+    const { key, salt, env } = getEasebuzzCredentials();
+
+    // Format amount to 2 decimal places as required by Easebuzz
+    const amountStr = totalAmount.toFixed(2);
+
+    const firstname = order.customer.name.split(' ')[0] || 'Customer';
+    const productinfo = `Order ${order.orderId}`;
+
+    const hashParams = {
+      key,
+      txnid: order.orderId,
+      amount: amountStr,
+      productinfo,
+      firstname,
+      email: order.customer.email,
+      phone: order.customer.mobile,
+      udf1: order.orderId
+    };
+
+    const hash = generateEasebuzzHash(hashParams, salt);
+
+    // Call Easebuzz Initiate Payment API using URLSearchParams
+    const initiateUrl = env === 'prod'
+      ? 'https://pay.easebuzz.in/payment/initiateLink'
+      : 'https://testpay.easebuzz.in/payment/initiateLink';
+
+    const details = {
+      key,
+      txnid: order.orderId,
+      amount: amountStr,
+      productinfo,
+      firstname,
+      email: order.customer.email,
+      phone: order.customer.mobile,
+      surl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/confirmation?orderId=${order.orderId}`,
+      furl: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/checkout`,
+      hash,
+      udf1: order.orderId
+    };
+
+    const formBody = Object.keys(details)
+      .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(details[k]))
+      .join('&');
+
+    console.log(`📡 Initiating Easebuzz payment for Order ${order.orderId} (Env: ${env})...`);
+
+    const response = await fetch(initiateUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: formBody
     });
 
-    order.razorpayOrderId = razorpayOrder.id;
+    if (!response.ok) {
+      throw new Error(`Easebuzz API returned status code ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (!result || result.status !== 1) {
+      throw new Error(result?.data || 'Failed to initiate Easebuzz checkout.');
+    }
+
+    const accessKey = result.data;
+
+    order.easebuzzOrderId = accessKey;
     order.paymentStatus = 'pending';
     await order.save();
 
     res.status(201).json({
       success: true,
-      message: 'Razorpay order created successfully.',
-      keyId: getRazorpayKeyId(),
+      message: 'Easebuzz payment initiated successfully.',
+      keyId: key,
       orderId: order.orderId,
-      razorpayOrderId: razorpayOrder.id,
-      amount: razorpayOrder.amount,
-      currency: razorpayOrder.currency,
+      easebuzzOrderId: accessKey,
+      amount: totalAmount,
+      currency: 'INR',
+      env,
       order
     });
   } catch (error) {
-    console.error(`❌ Error creating Razorpay order: ${error.message}`);
+    console.error(`❌ Error creating Easebuzz order: ${error.message}`);
     res.status(500).json({
       success: false,
       message: error.message || 'Server error creating payment order.',
@@ -86,30 +129,26 @@ router.post('/order', async (req, res) => {
 });
 
 // @route   POST /api/payments/verify
-// @desc    Verify Razorpay payment signature and mark the order as paid
+// @desc    Verify Easebuzz payment response and mark the order as paid
 // @access  Public
 router.post('/verify', async (req, res) => {
   try {
     const {
       orderId,
-      razorpay_payment_id: razorpayPaymentId,
-      razorpay_order_id: razorpayOrderId,
-      razorpay_signature: razorpaySignature
+      easebuzz_payment_id: easepayid,
+      easebuzz_order_id: txnid,
+      easebuzz_signature: clientHash,
+      easebuzz_response: responsePayload
     } = req.body;
 
-    if (!orderId || !razorpayPaymentId || !razorpayOrderId || !razorpaySignature) {
+    if (!orderId) {
       return res.status(400).json({
         success: false,
-        message: 'Missing Razorpay payment verification fields.'
+        message: 'Missing orderId for verification.'
       });
     }
 
-    const order = await Order.findOne({
-      $or: [
-        { orderId: orderId.trim() },
-        { razorpayOrderId: razorpayOrderId.trim() }
-      ]
-    });
+    const order = await Order.findOne({ orderId: orderId.trim() });
 
     if (!order) {
       return res.status(404).json({
@@ -118,37 +157,76 @@ router.post('/verify', async (req, res) => {
       });
     }
 
-    const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+    const { key, salt, env } = getEasebuzzCredentials();
 
-    if (!razorpaySecret) {
-      return res.status(500).json({
-        success: false,
-        message: 'Razorpay secret is not configured.'
-      });
+    let isVerified = false;
+
+    // Method 1: Verify the hash from the payload if provided
+    if (responsePayload && responsePayload.hash) {
+      isVerified = verifyEasebuzzResponseHash(responsePayload, salt);
+    } else if (req.body && req.body.hash) {
+      isVerified = verifyEasebuzzResponseHash(req.body, salt);
     }
 
-    const expectedSignature = crypto
-      .createHmac('sha256', razorpaySecret)
-      .update(`${razorpayOrderId}|${razorpayPaymentId}`)
-      .digest('hex');
+    // Method 2: Fallback to Retrieve API if signature verification failed/not possible
+    if (!isVerified) {
+      console.log(`⚠️ Hash verification failed or missing payload. Calling retrieve API for Order ${order.orderId}...`);
+      
+      const retrieveUrl = env === 'prod'
+        ? 'https://pay.easebuzz.in/transaction/v1/retrieve'
+        : 'https://testpay.easebuzz.in/transaction/v1/retrieve';
 
-    const signatureBuffer = Buffer.from(razorpaySignature);
-    const expectedBuffer = Buffer.from(expectedSignature);
+      const amountStr = order.financials.total.toFixed(2);
+      const retrieveHash = crypto
+        .createHash('sha512')
+        .update(`${key}|${order.orderId}|${amountStr}|${order.customer.email}|${order.customer.mobile}|${salt}`)
+        .digest('hex');
 
-    if (
-      signatureBuffer.length !== expectedBuffer.length ||
-      !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
-    ) {
+      const retrieveDetails = {
+        key,
+        txnid: order.orderId,
+        amount: amountStr,
+        email: order.customer.email,
+        phone: order.customer.mobile,
+        hash: retrieveHash
+      };
+
+      const retrieveFormBody = Object.keys(retrieveDetails)
+        .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(retrieveDetails[k]))
+        .join('&');
+
+      const retrieveResponse = await fetch(retrieveUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: retrieveFormBody
+      });
+
+      if (retrieveResponse.ok) {
+        const retrieveResult = await retrieveResponse.json();
+        if (retrieveResult && retrieveResult.status === 1 && retrieveResult.data) {
+          const txStatus = retrieveResult.data.status;
+          if (txStatus === 'success') {
+            isVerified = true;
+            console.log(`✅ Retrieve API confirmed success for Order ${order.orderId}`);
+          }
+        }
+      }
+    }
+
+    if (!isVerified) {
       return res.status(400).json({
         success: false,
-        message: 'Payment signature verification failed.'
+        message: 'Payment verification failed.'
       });
     }
 
+    // Mark as paid
     order.paymentStatus = 'paid';
-    order.razorpayOrderId = razorpayOrderId;
-    order.razorpayPaymentId = razorpayPaymentId;
-    order.razorpaySignature = razorpaySignature;
+    order.easebuzzOrderId = txnid || order.easebuzzOrderId;
+    order.easebuzzPaymentId = easepayid || (responsePayload && responsePayload.easepayid) || '';
+    order.easebuzzSignature = clientHash || (responsePayload && responsePayload.hash) || '';
     await order.save();
 
     // Send order confirmation email using Resend
@@ -158,7 +236,6 @@ router.post('/verify', async (req, res) => {
       console.error(`❌ Non-blocking error sending order confirmation email: ${emailError.message}`);
     }
 
-
     res.status(200).json({
       success: true,
       message: 'Payment verified successfully.',
@@ -166,7 +243,7 @@ router.post('/verify', async (req, res) => {
       order
     });
   } catch (error) {
-    console.error(`❌ Error verifying Razorpay payment: ${error.message}`);
+    console.error(`❌ Error verifying Easebuzz payment: ${error.message}`);
     res.status(500).json({
       success: false,
       message: error.message || 'Server error verifying payment.',

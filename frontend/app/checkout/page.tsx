@@ -21,36 +21,12 @@ type DeliveryZone = "local" | "state" | "national";
 type PaymentMethod = "upi" | "card" | "netbanking";
 
 interface EasebuzzPaymentResponse {
-  easebuzz_payment_id: string;
-  easebuzz_order_id: string;
-  easebuzz_signature: string;
+  txnid: string;
+  easepayid: string;
+  amount: string;
+  status: string;
+  hash: string;
   [key: string]: any;
-}
-
-interface EasebuzzCheckoutOptions {
-  key: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
-  order_id: string;
-  prefill: {
-    name: string;
-    email: string;
-    contact: string;
-  };
-  notes?: Record<string, string>;
-  theme?: {
-    color?: string;
-  };
-  modal?: {
-    ondismiss?: () => void;
-  };
-  handler?: (response: EasebuzzPaymentResponse) => void | Promise<void>;
-}
-
-interface EasebuzzCheckoutInstance {
-  open: () => void;
 }
 
 const EASEBUZZ_SCRIPT_ID = "easebuzz-checkout-script";
@@ -61,32 +37,22 @@ const loadEasebuzzScript = () => {
   }
 
   const existingWindow = window as Window & {
-    Easebuzz?: new (options: EasebuzzCheckoutOptions) => EasebuzzCheckoutInstance;
+    EasebuzzCheckout?: any;
   };
 
-  const razorpayKey = ["Razor", "pay"].join("");
-  const win = existingWindow as any;
-
-  if (win[razorpayKey]) {
-    win.Easebuzz = win[razorpayKey];
-  }
-
-  if (existingWindow.Easebuzz) {
+  if (existingWindow.EasebuzzCheckout) {
     return Promise.resolve(true);
   }
 
   const existingScript = document.getElementById(EASEBUZZ_SCRIPT_ID) as HTMLScriptElement | null;
   if (existingScript) {
     return new Promise<boolean>((resolve) => {
-      if (existingWindow.Easebuzz) {
+      if (existingWindow.EasebuzzCheckout) {
         resolve(true);
         return;
       }
 
       existingScript.addEventListener("load", () => {
-        if (win[razorpayKey]) {
-          win.Easebuzz = win[razorpayKey];
-        }
         resolve(true);
       }, { once: true });
       existingScript.addEventListener("error", () => resolve(false), { once: true });
@@ -96,12 +62,18 @@ const loadEasebuzzScript = () => {
   return new Promise<boolean>((resolve) => {
     const script = document.createElement("script");
     script.id = EASEBUZZ_SCRIPT_ID;
-    script.src = ["https://checkout.", "razor", "pay.com/v1/checkout.js"].join("");
+    
+    const easebuzzKey = process.env.NEXT_PUBLIC_EASEBUZZ_KEY || "";
+    const isTest = easebuzzKey.toLowerCase().includes("test") || 
+                   window.location.hostname.includes("localhost") || 
+                   window.location.hostname.includes("127.0.0.1");
+
+    script.src = isTest 
+      ? "https://test-ebz-static.easebuzz.in/easebuzz-checkout-v2.min.js"
+      : "https://ebz-static.easebuzz.in/easebuzz-checkout-v2.min.js";
+      
     script.async = true;
     script.onload = () => {
-      if (win[razorpayKey]) {
-        win.Easebuzz = win[razorpayKey];
-      }
       resolve(true);
     };
     script.onerror = () => resolve(false);
@@ -145,7 +117,7 @@ export default function CheckoutPage() {
   const total = Math.max(0, subtotal + gst + deliveryFee - discount);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-  const easebuzzKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
+  const easebuzzKeyId = process.env.NEXT_PUBLIC_EASEBUZZ_KEY || "";
 
   useEffect(() => {
     let mounted = true;
@@ -320,85 +292,63 @@ export default function CheckoutPage() {
         throw new Error(paymentResult.message || "Unable to initialize Easebuzz checkout.");
       }
 
-      const easebuzzWindow = window as Window & {
-        Easebuzz?: new (options: EasebuzzCheckoutOptions) => EasebuzzCheckoutInstance;
-      };
-
-      const EasebuzzConstructor = easebuzzWindow.Easebuzz;
-      if (!EasebuzzConstructor) {
-        throw new Error("Easebuzz checkout is unavailable.");
+      const easebuzzWindow = window as any;
+      const EasebuzzCheckoutConstructor = easebuzzWindow.EasebuzzCheckout;
+      if (!EasebuzzCheckoutConstructor) {
+        throw new Error("Easebuzz checkout library is not loaded.");
       }
 
-      const paymentCompleted = { current: false };
+      const easebuzzEnv = paymentResult.env || "test";
+      const easebuzz = new EasebuzzCheckoutConstructor(paymentResult.keyId || easebuzzKeyId, easebuzzEnv);
 
-      const easebuzz = new EasebuzzConstructor({
-        key: paymentResult.keyId || easebuzzKeyId,
-        amount: paymentResult.amount,
-        currency: paymentResult.currency || "INR",
-        name: "Krushisarthi Farm Store",
-        description: `Order ${savedOrderId}`,
-        order_id: paymentResult.easebuzzOrderId || paymentResult[["razor", "payOrderId"].join("")],
-        prefill: {
-          name,
-          email,
-          contact: mobile,
-        },
-        notes: {
-          orderId: savedOrderId,
-          paymentMethod,
-        },
-        theme: {
-          color: "#f59e0b",
-        },
-        modal: {
-          ondismiss: () => {
-            if (!paymentCompleted.current) {
+      easebuzz.initiatePayment({
+        access_key: paymentResult.easebuzzOrderId,
+        theme: "#f59e0b",
+        onResponse: async (response: any) => {
+          console.log("Easebuzz response:", response);
+          if (response && response.status === "success") {
+            try {
+              const verifyResponse = await fetch(`${apiUrl}/api/payments/verify`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  orderId: savedOrderId,
+                  easebuzz_payment_id: response.easepayid,
+                  easebuzz_order_id: response.txnid,
+                  easebuzz_signature: response.hash,
+                  easebuzz_response: response
+                }),
+              });
+
+              const verifyResult = await verifyResponse.json();
+
+              if (!verifyResponse.ok || !verifyResult.success) {
+                throw new Error(verifyResult.message || "Payment verification failed.");
+              }
+
+              setIsProcessing(false);
+              setPaymentStatus("success");
+
+              setTimeout(() => {
+                router.push(`/confirmation?orderId=${savedOrderId}`);
+              }, 1500);
+            } catch (error) {
+              const message = error instanceof Error ? error.message : "Error verifying payment.";
               setIsProcessing(false);
               setPaymentStatus("failed");
-              showToast("Payment was closed before completion.", "error");
-              setTimeout(() => setPaymentStatus("idle"), 2000);
+              showToast(message, "error");
+              setTimeout(() => setPaymentStatus("idle"), 2500);
             }
-          },
-        },
-        handler: async (response) => {
-          try {
-            const verifyResponse = await fetch(`${apiUrl}/api/payments/verify`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                orderId: savedOrderId,
-                [["razor", "pay_payment_id"].join("")]: response.easebuzz_payment_id || response[["razor", "pay_payment_id"].join("")],
-                [["razor", "pay_order_id"].join("")]: response.easebuzz_order_id || response[["razor", "pay_order_id"].join("")],
-                [["razor", "pay_signature"].join("")]: response.easebuzz_signature || response[["razor", "pay_signature"].join("")],
-              }),
-            });
-
-            const verifyResult = await verifyResponse.json();
-
-            if (!verifyResponse.ok || !verifyResult.success) {
-              throw new Error(verifyResult.message || "Payment verification failed.");
-            }
-
-            paymentCompleted.current = true;
-            setIsProcessing(false);
-            setPaymentStatus("success");
-
-            setTimeout(() => {
-              router.push(`/confirmation?orderId=${savedOrderId}`);
-            }, 1500);
-          } catch (error) {
-            const message = error instanceof Error ? error.message : "Error verifying payment.";
+          } else {
             setIsProcessing(false);
             setPaymentStatus("failed");
-            showToast(message, "error");
+            showToast(response?.error_Message || "Payment failed or cancelled.", "error");
             setTimeout(() => setPaymentStatus("idle"), 2500);
           }
-        },
+        }
       });
-
-      easebuzz.open();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to start Easebuzz checkout.";
       setIsProcessing(false);

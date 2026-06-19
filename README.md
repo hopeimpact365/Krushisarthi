@@ -14,7 +14,7 @@ Krushisarthi provides a seamless jaggery order placement platform coupled with a
 
 * **Frontend:** Next.js 15+ (App Router), React 19, TypeScript, Tailwind CSS
 * **Backend:** Node.js, Express, Mongoose (MongoDB Atlas integration), Helmet, Express Rate Limiter
-* **Third-Party APIs:** Razorpay Payments, Resend Email Service
+* **Third-Party APIs:** Easebuzz Payments, Resend Email Service
 
 ### High-Level Architecture
 ```
@@ -32,7 +32,7 @@ Krushisarthi provides a seamless jaggery order placement platform coupled with a
      │                             │
      ▼ Mongoose ODM                ▼ HTTPS Client
 ┌──────────────┐             ┌──────────────┐
-│  MongoDB     │             │ Razorpay /   │
+│  MongoDB     │             │ Easebuzz /   │
 │  Atlas       │             │ Resend APIs  │
 └──────────────┘             └──────────────┘
 ```

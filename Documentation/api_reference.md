@@ -168,7 +168,7 @@ The administration endpoints require JWT authentication.
 
 ## 3. Payments API
 
-### 3.1. Create Razorpay Transaction
+### 3.1. Create Easebuzz Transaction
 * **Endpoint:** `POST /api/payments/order`
 * **Access:** Public
 * **Payload Structure:**
@@ -181,30 +181,38 @@ The administration endpoints require JWT authentication.
 ```json
 {
   "success": true,
-  "message": "Razorpay order created successfully.",
-  "keyId": "rzp_test_YourKeyId",
+  "message": "Easebuzz payment initiated successfully.",
+  "keyId": "your_easebuzz_key",
   "orderId": "KS-0024",
-  "razorpayOrderId": "order_GhjKlPqWxz123",
-  "amount": 49218,
+  "easebuzzOrderId": "ESBZ_ACC_KEY_123456789",
+  "amount": 492.18,
   "currency": "INR",
+  "env": "test",
   "order": {
     "orderId": "KS-0024",
-    "razorpayOrderId": "order_GhjKlPqWxz123",
+    "easebuzzOrderId": "ESBZ_ACC_KEY_123456789",
     "paymentStatus": "pending"
   }
 }
 ```
 
-### 3.2. Verify Payment Signature
+### 3.2. Verify Easebuzz Payment Signature
 * **Endpoint:** `POST /api/payments/verify`
 * **Access:** Public
 * **Payload Structure:**
 ```json
 {
   "orderId": "KS-0024",
-  "razorpay_order_id": "order_GhjKlPqWxz123",
-  "razorpay_payment_id": "pay_PlmKnb1290zx",
-  "razorpay_signature": "e5816da324c...b98c"
+  "easebuzz_payment_id": "EP_12345",
+  "easebuzz_order_id": "KS-0024",
+  "easebuzz_signature": "e5816da324c...b98c",
+  "easebuzz_response": {
+    "status": "success",
+    "easepayid": "EP_12345",
+    "txnid": "KS-0024",
+    "amount": "492.18",
+    "hash": "e5816da324c...b98c"
+  }
 }
 ```
 * **Success Response (200 OK):**

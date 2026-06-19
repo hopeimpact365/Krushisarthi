@@ -111,15 +111,15 @@ const OrderSchema = new mongoose.Schema({
     enum: ['pending', 'paid', 'failed'],
     default: 'pending'
   },
-  razorpayOrderId: {
+  easebuzzOrderId: {
     type: String,
     trim: true
   },
-  razorpayPaymentId: {
+  easebuzzPaymentId: {
     type: String,
     trim: true
   },
-  razorpaySignature: {
+  easebuzzSignature: {
     type: String,
     trim: true
   },

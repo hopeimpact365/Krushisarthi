@@ -47,8 +47,9 @@ PORT=5000
 NODE_ENV=development
 MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/krushisarthi?retryWrites=true&w=majority
 JWT_SECRET=super_secret_minimum_32_characters_long_jwt_key
-RAZORPAY_KEY_ID=rzp_test_YourKeyId
-RAZORPAY_KEY_SECRET=YourRazorpaySecret
+EASEBUZZ_KEY=your_easebuzz_key
+EASEBUZZ_SALT=your_easebuzz_salt
+EASEBUZZ_ENV=test
 RESEND_API_KEY=re_YourResendApiKey
 RESEND_FROM_EMAIL=onboarding@resend.dev
 ADMIN_EMAIL=your_email@example.com

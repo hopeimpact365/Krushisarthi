@@ -39,7 +39,7 @@ graph TD
 
     %% External Systems
     subgraph External [External APIs]
-        Razorpay[Razorpay Payment API]
+        Easebuzz[Easebuzz Payment API]
         Resend[Resend Mail API]
     end
 
@@ -47,7 +47,7 @@ graph TD
     FE <-->|HTTPS / REST API| Gateway
     Gateway -->|Dispatch Request| Server
     Server <-->|Mongoose ODM| DB
-    PayRouter <-->|REST Payments| Razorpay
+    PayRouter <-->|REST Payments| Easebuzz
     Server <-->|Transactional Email| Resend
 ```
 
@@ -173,13 +173,13 @@ Aggregates customer service queries.
 [Call POST /api/orders (Store Pending Order)]
            │
            ▼
-[Call POST /api/payments/create-razorpay-order] ──> [Initialize Razorpay Checkout UI]
-                                                            │
-                                                            ▼
-                                                [Collect Payment Details]
-                                                            │
-                                                            ▼
-[Execute Verification Webhook / Bypass API] <─── [Customer Completes Payment]
+[Call POST /api/payments/order] ──> [Initialize Easebuzz Checkout iFrame]
+                                            │
+                                            ▼
+                                [Collect Payment Details]
+                                            │
+                                            ▼
+[Execute Verification API] <─── [Customer Completes Payment]
            │
            ▼
 [Update Order to paymentStatus: 'paid']
