@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Play, Search, Mail, RefreshCw } from "lucide-react";
 import gsap from "gsap";
@@ -319,15 +320,18 @@ export default function HomePage() {
     <div ref={containerRef} className="flex-1 flex flex-col w-full overflow-x-hidden" style={{ fontFamily: "var(--font-body)" }}>
 
       {/* ── 1. Hero — full viewport, copy anchored bottom-left ───────── */}
-      <section className="relative h-[88vh] min-h-[520px] flex flex-col justify-end overflow-hidden bg-[#2B1A0E]">
-        <img
+      <section className="relative min-h-[88vh] flex flex-col justify-end overflow-hidden bg-[#2B1A0E]">
+        <Image
           src="https://images.unsplash.com/photo-1606707761700-86b58f251a01?w=1920&q=75"
           alt="Sugarcane fields of Karbharwadi"
-          className="absolute inset-0 w-full h-full object-cover opacity-40"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover opacity-40"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1a0e04] via-[#1a0e04]/40 to-transparent" />
 
-        <div className="relative z-10 max-w-6xl mx-auto px-5 md:px-8 w-full pb-12 md:pb-16">
+        <div className="relative z-10 max-w-6xl mx-auto px-5 md:px-8 w-full pt-20 md:pt-24 pb-12 md:pb-16">
           <span className="eyebrow hero-eyebrow opacity-0" style={{ color: "#D4A24C" }}>GI Tagged · Karbharwadi, Kolhapur</span>
 
           <h1
@@ -393,11 +397,13 @@ export default function HomePage() {
       <section className="py-14 md:py-16 px-5 md:px-8 bg-[#FAF6EE] border-b border-[#E5D9C4] section-revival">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-10 md:gap-12 items-center">
           <div className="relative section-revival-img opacity-0">
-            <div className="aspect-[4/5] rounded-xl overflow-hidden shadow-lg grain-overlay">
-              <img
+            <div className="relative aspect-[4/5] rounded-xl overflow-hidden shadow-lg grain-overlay">
+              <Image
                 src="https://images.unsplash.com/photo-1606707761700-86b58f251a01?w=800&q=80"
                 alt="Karbharwadi sugarcane farms"
-                className="w-full h-full object-cover"
+                fill
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover"
               />
             </div>
             <div className="absolute -bottom-4 -right-3 md:-right-5 bg-white border border-[#E5D9C4] rounded-lg px-4 py-2.5 shadow-md">
@@ -447,8 +453,8 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {products.map((p) => (
               <div key={p.id} className="hover-lift group flex flex-col border border-[#E5D9C4] rounded-xl overflow-hidden bg-[#FAF6EE] product-card opacity-0">
-                <div className="aspect-[16/9] overflow-hidden bg-[#F1E6D2]">
-                  <img src={p.img} alt={p.name} className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" />
+                <div className="relative aspect-[16/9] overflow-hidden bg-[#F1E6D2]">
+                  <Image src={p.img} alt={p.name} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover group-hover:scale-[1.03] transition-transform duration-500" />
                 </div>
                 <div className="p-5 flex flex-col justify-between flex-1">
                   <div className="flex items-center justify-between mb-4">

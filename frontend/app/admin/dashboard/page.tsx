@@ -29,9 +29,6 @@ import {
   Trash2
 } from "lucide-react";
 import { useToast } from "@/components/ToastProvider";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 
 interface UserRecord {
   id: string;
@@ -463,67 +460,84 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleExportExcel = () => {
-    const dataToExport = filteredUsers.map(({ name, email, phone, amountPaid, paymentStatus, dateJoined, id, weightKg, cropStage, address }) => ({
-      "Name": name,
-      "Email": email,
-      "Phone": phone,
-      "Order ID": id,
-      "Weight (kg)": weightKg,
-      "Amount Paid (INR)": amountPaid,
-      "Payment Status": paymentStatus,
-      "Crop Stage": cropStage,
-      "Date Joined": dateJoined,
-      "Shipping Address": address,
-    }));
+  const handleExportExcel = async () => {
+    try {
+      const XLSX = await import("xlsx");
+      
+      const dataToExport = filteredUsers.map(({ name, email, phone, amountPaid, paymentStatus, dateJoined, id, weightKg, cropStage, address }) => ({
+        "Name": name,
+        "Email": email,
+        "Phone": phone,
+        "Order ID": id,
+        "Weight (kg)": weightKg,
+        "Amount Paid (INR)": amountPaid,
+        "Payment Status": paymentStatus,
+        "Crop Stage": cropStage,
+        "Date Joined": dateJoined,
+        "Shipping Address": address,
+      }));
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
-    
-    // Auto-fit columns
-    const maxLens = dataToExport.reduce((acc, row) => {
-      Object.keys(row).forEach((key) => {
-        const val = row[key as keyof typeof row]?.toString() || "";
-        acc[key] = Math.max(acc[key] || 0, val.length, key.length);
-      });
-      return acc;
-    }, {} as Record<string, number>);
-    worksheet["!cols"] = Object.keys(maxLens).map((key) => ({ wch: maxLens[key] + 3 }));
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Users");
+      
+      // Auto-fit columns
+      const maxLens = dataToExport.reduce((acc, row) => {
+        Object.keys(row).forEach((key) => {
+          const val = row[key as keyof typeof row]?.toString() || "";
+          acc[key] = Math.max(acc[key] || 0, val.length, key.length);
+        });
+        return acc;
+      }, {} as Record<string, number>);
+      worksheet["!cols"] = Object.keys(maxLens).map((key) => ({ wch: maxLens[key] + 3 }));
 
-    XLSX.writeFile(workbook, "Krushisarthi_Users_Payments.xlsx");
+      XLSX.writeFile(workbook, "Krushisarthi_Users_Payments.xlsx");
+      showToast("Excel report exported successfully.", "success");
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to load Excel library.", "error");
+    }
   };
 
-  const handleExportPDF = () => {
-    const doc = new jsPDF();
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text("Krushisarthi - Users Payment & Farm Plot Report", 14, 20);
-    
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 26);
-    doc.text(`Total Records: ${filteredUsers.length}`, 14, 31);
-    
-    autoTable(doc, {
-      startY: 38,
-      head: [["Name", "Email", "Order ID", "Weight", "Amount", "Status", "Crop Stage"]],
-      body: filteredUsers.map(u => [
-        u.name,
-        u.email,
-        u.id,
-        `${u.weightKg} kg`,
-        `Rs. ${u.amountPaid}`,
-        u.paymentStatus,
-        u.cropStage
-      ]),
-      headStyles: { fillColor: [120, 53, 15] },
-      styles: { font: "helvetica", fontSize: 9 },
-      alternateRowStyles: { fillColor: [247, 244, 237] }
-    });
+  const handleExportPDF = async () => {
+    try {
+      const { default: jsPDF } = await import("jspdf");
+      const { default: autoTable } = await import("jspdf-autotable");
+      
+      const doc = new jsPDF();
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.text("Krushisarthi - Users Payment & Farm Plot Report", 14, 20);
+      
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 26);
+      doc.text(`Total Records: ${filteredUsers.length}`, 14, 31);
+      
+      autoTable(doc, {
+        startY: 38,
+        head: [["Name", "Email", "Order ID", "Weight", "Amount", "Status", "Crop Stage"]],
+        body: filteredUsers.map(u => [
+          u.name,
+          u.email,
+          u.id,
+          `${u.weightKg} kg`,
+          `Rs. ${u.amountPaid}`,
+          u.paymentStatus,
+          u.cropStage
+        ]),
+        headStyles: { fillColor: [120, 53, 15] },
+        styles: { font: "helvetica", fontSize: 9 },
+        alternateRowStyles: { fillColor: [247, 244, 237] }
+      });
 
-    doc.save("Krushisarthi_Users_Report.pdf");
+      doc.save("Krushisarthi_Users_Report.pdf");
+      showToast("PDF report exported successfully.", "success");
+    } catch (err) {
+      console.error(err);
+      showToast("Failed to load PDF library.", "error");
+    }
   };
 
   // Crop Stage distribution totals

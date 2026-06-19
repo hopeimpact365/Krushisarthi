@@ -1,7 +1,24 @@
 import type { Metadata, Viewport } from "next";
+import { Playfair_Display, DM_Sans } from "next/font/google";
 import { siteConfig } from "@/lib/site-config";
 import { Navbar } from "@/components/Navbar";
 import "./globals.css";
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-display",
+  weight: ["400", "600", "700", "800"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-body",
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -60,7 +77,6 @@ import { CartProvider } from "@/components/CartProvider";
 import { ToastProvider } from "@/components/ToastProvider";
 import { PageTransition } from "@/components/PageTransition";
 import { Footer } from "@/components/Footer";
-import { SecurityProvider } from "@/components/SecurityProvider";
 
 export default function RootLayout({
   children,
@@ -68,10 +84,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang="en" data-scroll-behavior="smooth" className={`${playfair.variable} ${dmSans.variable}`}>
       <body className="antialiased min-h-screen flex flex-col">
         <ToastProvider>
-          <SecurityProvider />
           <CartProvider>
             <Navbar />
             <main className="flex-1 flex flex-col">

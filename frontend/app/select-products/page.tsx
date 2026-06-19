@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Minus, Plus, AlertCircle, ArrowRight, ShoppingBag, Truck, ShieldCheck, X } from "lucide-react";
@@ -23,20 +24,20 @@ export default function SelectProductsPage() {
     const ctx = gsap.context(() => {
       // Header Animation
       const headerTl = gsap.timeline({ defaults: { ease: "power3.out" } });
-      headerTl.fromTo(".products-badge", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.7, delay: 0.1 });
-      headerTl.fromTo(".products-title", { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.8 }, "-=0.55");
-      headerTl.fromTo(".products-desc", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.8 }, "-=0.65");
+      headerTl.fromTo(".products-badge", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, delay: 0.05 });
+      headerTl.fromTo(".products-title", { opacity: 0, y: 15 }, { opacity: 1, y: 0, duration: 0.45 }, "-=0.3");
+      headerTl.fromTo(".products-desc", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.45 }, "-=0.35");
 
       // Product cards list reveal
       gsap.fromTo(".select-product-card",
         { opacity: 0, y: 20 },
-        { opacity: 1, y: 0, duration: 0.8, stagger: 0.12, delay: 0.3, ease: "power3.out" }
+        { opacity: 1, y: 0, duration: 0.45, stagger: 0.06, delay: 0.1, ease: "power3.out" }
       );
 
       // Summary sidebar card
       gsap.fromTo(".order-summary-sidebar",
         { opacity: 0, y: 25 },
-        { opacity: 1, y: 0, duration: 0.9, delay: 0.4, ease: "power3.out" }
+        { opacity: 1, y: 0, duration: 0.5, delay: 0.15, ease: "power3.out" }
       );
 
     }, containerRef);
@@ -110,17 +111,19 @@ export default function SelectProductsPage() {
             {items.map((product) => (
               <div
                 key={product.id}
-                className={`group bg-card border rounded-2xl p-5 md:p-6 flex flex-col sm:flex-row gap-6 items-center justify-between shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 select-product-card opacity-0 ${product.quantity > 0
+                className={`group bg-card border rounded-2xl p-5 md:p-6 flex flex-col sm:flex-row gap-6 items-center justify-between shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-[border-color,background-color,box-shadow,transform] duration-200 ease-out select-product-card opacity-0 ${product.quantity > 0
                   ? "border-primary bg-primary/[0.01]"
                   : "border-border hover:border-primary/20"
                   }`}
               >
                 {/* Left: Product Image */}
                 <div className="relative w-28 sm:w-36 aspect-[16/9] rounded-xl overflow-hidden border border-border shrink-0 bg-muted flex items-center justify-center">
-                  <img
+                  <Image
                     src={product.image}
                     alt={product.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    fill
+                    sizes="(max-width: 640px) 112px, 144px"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
 
@@ -143,7 +146,7 @@ export default function SelectProductsPage() {
                     <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">Quantity (kg)</span>
 
                     {/* Premium Stepper-Input Component */}
-                    <div className="flex items-stretch bg-background border border-border rounded-xl shadow-sm overflow-hidden h-11 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all w-36">
+                    <div className="flex items-stretch bg-background border border-border rounded-xl shadow-sm overflow-hidden h-11 focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-[border-color,box-shadow] duration-150 w-36">
                       <button
                         type="button"
                         onClick={() => handleQuantityUpdate(product.id, Math.max(0, product.quantity - 0.5))}
@@ -213,7 +216,7 @@ export default function SelectProductsPage() {
                 {/* Progress gauge */}
                 <div className="w-full bg-muted h-2.5 rounded-full overflow-hidden border border-border/40">
                   <div
-                    className={`h-full transition-all duration-300 rounded-full ${totalWeight === 0
+                    className={`h-full transition-[width] duration-200 ease-out rounded-full ${totalWeight === 0
                       ? "w-0"
                       : isOverLimit
                         ? "bg-destructive w-full"
