@@ -125,19 +125,86 @@ app.get('/', (req, res) => {
   const dbState = dbStates[mongoose.connection.readyState] || { label: 'Unknown', color: '#9ca3af' };
   const dbHost = mongoose.connection.readyState === 1 ? mongoose.connection.host : 'N/A';
 
+  const checkEnvVar = (name, validator) => {
+    const val = process.env[name];
+    if (!val) {
+      return { status: 'Missing', color: '#ef4444', value: 'Not Configured' };
+    }
+    const validationResult = validator ? validator(val) : { valid: true };
+    if (!validationResult.valid) {
+      return { status: 'Invalid', color: '#ffb300', value: validationResult.reason || 'Invalid Format' };
+    }
+    
+    let masked = 'Configured';
+    if (name === 'MONGODB_URI') {
+      try {
+        const url = new URL(val);
+        masked = `${url.protocol}//${url.username ? '***' : ''}:${url.password ? '***' : ''}@${url.host}`;
+      } catch (e) {
+        masked = val.slice(0, 15) + '...';
+      }
+    } else if (val.length > 8) {
+      masked = val.slice(0, 4) + '...' + val.slice(-4);
+    }
+    return { status: 'Valid', color: '#10b981', value: masked };
+  };
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const urlRegex = /^https?:\/\/[^\s/$.?#].[^\s]*$/;
+
+  const envChecks = [
+    { name: 'PORT', check: checkEnvVar('PORT', (v) => ({ valid: !isNaN(v), reason: 'Must be a number' })) },
+    { name: 'NODE_ENV', check: checkEnvVar('NODE_ENV', (v) => ({ valid: ['development', 'production', 'test'].includes(v), reason: 'Invalid environment type' })) },
+    { name: 'MONGODB_URI', check: checkEnvVar('MONGODB_URI', (v) => ({ valid: v.startsWith('mongodb://') || v.startsWith('mongodb+srv://'), reason: 'Invalid MongoDB connection string format' })) },
+    { name: 'JWT_SECRET', check: checkEnvVar('JWT_SECRET', (v) => ({ valid: v.length >= 32, reason: `Weak key (${v.length} chars, min 32 recommended)` })) },
+    { name: 'RAZORPAY_KEY_ID', check: checkEnvVar('RAZORPAY_KEY_ID', (v) => ({ valid: v.startsWith('rzp_test_') || v.startsWith('rzp_live_'), reason: 'Must start with rzp_test_ or rzp_live_' })) },
+    { name: 'RAZORPAY_KEY_SECRET', check: checkEnvVar('RAZORPAY_KEY_SECRET', (v) => ({ valid: v.length > 5, reason: 'Too short' })) },
+    { name: 'RESEND_API_KEY', check: checkEnvVar('RESEND_API_KEY', (v) => ({ valid: v.startsWith('re_'), reason: 'Must start with re_' })) },
+    { name: 'RESEND_FROM_EMAIL', check: checkEnvVar('RESEND_FROM_EMAIL') },
+    { name: 'ADMIN_EMAIL', check: checkEnvVar('ADMIN_EMAIL', (v) => ({ valid: emailRegex.test(v), reason: 'Invalid email format' })) },
+    { name: 'FRONTEND_URL', check: checkEnvVar('FRONTEND_URL', (v) => ({ valid: urlRegex.test(v), reason: 'Invalid URL format' })) },
+  ];
+
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+
   const stats = {
+    port: PORT,
     env: NODE_ENV.charAt(0).toUpperCase() + NODE_ENV.slice(1),
     uptime: formatUptime(uptimeSeconds),
     memory: formatBytes(memoryUsage.heapUsed) + ' (heap)',
     nodeVersion: process.version,
     dbStatus: dbState.label,
     dbColor: dbState.color,
-    dbHost: dbHost
+    dbHost: dbHost,
+    dbName: mongoose.connection.readyState === 1 ? mongoose.connection.name : 'N/A',
+    platform: os.platform(),
+    arch: os.arch(),
+    cpuCount: os.cpus().length,
+    systemFreeMem: formatBytes(freeMem),
+    systemTotalMem: formatBytes(totalMem),
+    envChecks: envChecks
   };
   
   res.setHeader('Content-Type', 'text/html');
   res.send(getStatusHtml(stats));
 });
+
+// Database Live Latency check route
+app.get('/api/db-ping', async (req, res) => {
+  const start = Date.now();
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error('Database is not connected');
+    }
+    await mongoose.connection.db.admin().ping();
+    const duration = Date.now() - start;
+    res.json({ success: true, latencyMs: duration });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 
 // JSON Healthcheck route
 app.get('/api/health', (req, res) => {

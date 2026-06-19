@@ -1,23 +1,29 @@
 export const getStatusHtml = (stats) => {
+  const envCheckListJson = JSON.stringify(stats.envChecks || []);
+  
   return `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Krushisarthi API Service</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Krushisarthi Status Center</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg-color: #0b0f19;
-            --card-bg: rgba(17, 24, 39, 0.7);
-            --border-color: rgba(255, 255, 255, 0.08);
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
             --primary: #10b981;
-            --primary-glow: rgba(16, 185, 129, 0.15);
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
+            --primary-light: #ecfdf5;
             --accent: #3b82f6;
-            --accent-glow: rgba(59, 130, 246, 0.15);
+            --accent-light: #eff6ff;
+            --warning: #f59e0b;
+            --warning-light: #fef3c7;
+            --danger: #ef4444;
+            --danger-light: #fef2f2;
         }
 
         * {
@@ -27,361 +33,508 @@ export const getStatusHtml = (stats) => {
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        /* Decorative background elements */
-        body::before {
-            content: '';
-            position: absolute;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, transparent 70%);
-            top: 10%;
-            left: 10%;
-            z-index: -1;
-            filter: blur(50px);
-        }
-
-        body::after {
-            content: '';
-            position: absolute;
-            width: 350px;
-            height: 350px;
-            background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 70%);
-            bottom: 10%;
-            right: 10%;
-            z-index: -1;
-            filter: blur(60px);
+            padding: 40px 16px;
+            line-height: 1.5;
         }
 
         .container {
             width: 100%;
-            max-width: 750px;
-            padding: 24px;
-            z-index: 1;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
         }
 
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--border-color);
-            border-radius: 24px;
-            padding: 40px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
+        /* Clean Header */
         .header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 32px;
+            padding: 8px 0;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 24px;
+            padding-bottom: 20px;
         }
 
-        .title-area {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .logo-placeholder {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            color: #fff;
-            font-size: 20px;
-            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-        }
-
-        .title-text h1 {
+        .brand h1 {
             font-family: 'Outfit', sans-serif;
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 700;
             letter-spacing: -0.5px;
-            background: linear-gradient(to right, #ffffff, #d1d5db);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
 
-        .title-text p {
-            font-size: 14px;
+        .brand p {
+            font-size: 13px;
             color: var(--text-muted);
-            margin-top: 2px;
+            margin-top: 4px;
         }
 
-        .badge {
-            display: inline-flex;
+        .status-pill {
+            display: flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 16px;
+            padding: 6px 12px;
             border-radius: 9999px;
             font-size: 13px;
             font-weight: 600;
-            background: var(--primary-glow);
-            color: var(--primary);
-            border: 1px solid rgba(16, 185, 129, 0.2);
+            border: 1px solid var(--border-color);
+            background: var(--card-bg);
         }
 
-        .pulse-dot {
+        .status-dot {
             width: 8px;
             height: 8px;
-            background-color: var(--primary);
             border-radius: 50%;
             display: inline-block;
-            animation: pulse 1.8s infinite ease-in-out;
         }
 
-        @keyframes pulse {
-            0% {
-                transform: scale(0.85);
-                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-            }
-            70% {
-                transform: scale(1);
-                box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
-            }
-            100% {
-                transform: scale(0.85);
-                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
-            }
+        .pulse {
+            animation: pulse-ring 2s infinite ease-in-out;
         }
 
+        @keyframes pulse-ring {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+
+        /* Bento Grid */
         .grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-            margin-bottom: 32px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
         }
 
-        .metric-card {
-            background: rgba(255, 255, 255, 0.02);
+        .card {
+            background: var(--card-bg);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
-            padding: 20px;
-            transition: transform 0.2s ease, border-color 0.2s ease;
-        }
-
-        .metric-card:hover {
-            transform: translateY(-2px);
-            border-color: rgba(255, 255, 255, 0.15);
-        }
-
-        .metric-label {
-            font-size: 13px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 6px;
-            font-weight: 500;
-        }
-
-        .metric-value {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--text-main);
-            font-family: 'Outfit', sans-serif;
-        }
-
-        .endpoints {
-            margin-top: 32px;
-        }
-
-        .endpoints-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .endpoint-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 14px 18px;
             border-radius: 12px;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border-color);
-            margin-bottom: 12px;
-            transition: all 0.2s ease;
-        }
-
-        .endpoint-row:hover {
-            background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(59, 130, 246, 0.3);
-        }
-
-        .endpoint-path {
+            padding: 20px;
             display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .method-badge {
-            font-size: 11px;
-            font-weight: 700;
-            padding: 4px 8px;
-            border-radius: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .method-get {
-            background: rgba(59, 130, 246, 0.15);
-            color: #3b82f6;
-            border: 1px solid rgba(59, 130, 246, 0.25);
-        }
-
-        .path-text {
-            font-family: monospace;
-            font-size: 14px;
-            color: #d1d5db;
-        }
-
-        .btn-link {
-            text-decoration: none;
-            font-size: 13px;
-            color: var(--accent);
-            font-weight: 600;
-            transition: opacity 0.2s;
-            display: inline-flex;
-            align-items: center;
+            flex-direction: column;
             gap: 4px;
         }
 
-        .btn-link:hover {
-            opacity: 0.8;
-            text-decoration: underline;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 24px;
+        .card-label {
             font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
             color: var(--text-muted);
         }
 
-        @media (max-width: 600px) {
+        .card-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--text-main);
+            word-break: break-all;
+        }
+
+        .card-footer {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* Sections and Panels */
+        .panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .panel-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .col-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        /* Configuration auditor table */
+        .table-wrapper {
+            overflow-x: auto;
+            width: 100%;
+        }
+
+        .status-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .status-table th, .status-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .status-table th {
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .monospace {
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        /* Status tags */
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .tag-success {
+            background-color: var(--primary-light);
+            color: var(--primary);
+        }
+
+        .tag-danger {
+            background-color: var(--danger-light);
+            color: var(--danger);
+        }
+
+        .tag-warning {
+            background-color: var(--warning-light);
+            color: var(--warning);
+        }
+
+        .tag-info {
+            background-color: var(--accent-light);
+            color: var(--accent);
+        }
+
+        /* Custom buttons */
+        .btn-simple {
+            background: #ffffff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-simple:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+
+        .btn-simple:active {
+            background: #f1f5f9;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        @media (max-width: 768px) {
             .grid {
                 grid-template-columns: 1fr;
             }
-            .card {
-                padding: 24px;
+            .col-2 {
+                grid-template-columns: 1fr;
             }
-            .header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 16px;
+            .panel {
+                padding: 16px;
             }
-            .badge {
-                align-self: flex-start;
+            body {
+                padding: 20px 12px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="card">
-            <div class="header">
-                <div class="title-area">
-                    <div class="logo-placeholder">KS</div>
-                    <div class="title-text">
-                        <h1>Krushisarthi Backend</h1>
-                        <p>Express.js API Service</p>
-                    </div>
-                </div>
-                <div class="badge">
-                    <span class="pulse-dot"></span>
-                    <span>System Online</span>
+        <!-- HEADER -->
+        <header class="header">
+            <div class="brand">
+                <h1>Krushisarthi API Monitor</h1>
+                <p>Express API server diagnostics for localhost:${stats.port}</p>
+            </div>
+            <div class="status-pill">
+                <span class="status-dot pulse" style="background-color: ${stats.dbColor};"></span>
+                <span style="color: ${stats.dbColor === '#10b981' ? 'var(--text-main)' : stats.dbColor};">
+                    ${stats.dbStatus === 'Connected' ? 'System Operational' : 'Database Error'}
+                </span>
+            </div>
+        </header>
+
+        <!-- THREE CORE STATS -->
+        <section class="grid">
+            <div class="card">
+                <span class="card-label">Active Environment</span>
+                <span class="card-value" style="color: ${stats.env === 'Production' ? 'var(--warning)' : 'var(--accent)'}">${stats.env}</span>
+                <span class="card-footer">Running in ${stats.env.toLowerCase()} mode</span>
+            </div>
+            <div class="card">
+                <span class="card-label">Uptime</span>
+                <span class="card-value" id="uptime-display">${stats.uptime}</span>
+                <span class="card-footer">Process runtime duration</span>
+            </div>
+            <div class="card">
+                <span class="card-label">Memory Usage</span>
+                <span class="card-value">${stats.memory}</span>
+                <span class="card-footer">Active heap allocation</span>
+            </div>
+        </section>
+
+        <!-- CONFIGURATION AUDIT & SYSTEM TELEMETRY -->
+        <section class="col-2">
+            <!-- Env Config -->
+            <div class="panel">
+                <h2 class="panel-title">Environment Checklist</h2>
+                <div class="table-wrapper">
+                    <table class="status-table">
+                        <thead>
+                            <tr>
+                                <th>Variable</th>
+                                <th>Status</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(stats.envChecks || []).map(item => `
+                                <tr>
+                                    <td class="monospace" style="font-weight: 500;">${item.name}</td>
+                                    <td>
+                                        <span class="tag ${
+                                            item.check.status === 'Valid' ? 'tag-success' : 
+                                            item.check.status === 'Invalid' ? 'tag-warning' : 'tag-danger'
+                                        }">
+                                            ${item.check.status}
+                                        </span>
+                                    </td>
+                                    <td class="monospace" style="color: var(--text-muted); font-size: 12px;">
+                                        ${item.check.value}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <div class="grid">
-                <div class="metric-card">
-                    <div class="metric-label">Environment</div>
-                    <div class="metric-value">${stats.env}</div>
+            <!-- System Telemetry & Ping -->
+            <div class="panel" style="justify-content: flex-start; gap: 20px;">
+                <div>
+                    <h2 class="panel-title" style="margin-bottom: 12px;">System Hardware</h2>
+                    <table class="status-table">
+                        <tbody>
+                            <tr>
+                                <td style="font-weight: 500; padding: 8px 0;">Platform</td>
+                                <td class="monospace" style="text-align: right; padding: 8px 0; color: var(--text-muted);">${stats.platform} (${stats.arch})</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 500; padding: 8px 0;">CPU Count</td>
+                                <td class="monospace" style="text-align: right; padding: 8px 0; color: var(--text-muted);">${stats.cpuCount} Cores</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 500; padding: 8px 0;">Node Version</td>
+                                <td class="monospace" style="text-align: right; padding: 8px 0; color: var(--text-muted);">${stats.nodeVersion}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 500; padding: 8px 0;">RAM Status</td>
+                                <td class="monospace" style="text-align: right; padding: 8px 0; color: var(--text-muted);">${stats.systemFreeMem} free / ${stats.systemTotalMem}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="metric-card">
-                    <div class="metric-label">Uptime</div>
-                    <div class="metric-value">${stats.uptime}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Memory Usage</div>
-                    <div class="metric-value">${stats.memory}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Node Version</div>
-                    <div class="metric-value">${stats.nodeVersion}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Database Status</div>
-                    <div class="metric-value" style="color: ${stats.dbColor};">${stats.dbStatus}</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">Database Host</div>
-                    <div class="metric-value" style="font-size: 14px; font-family: monospace; word-break: break-all;">${stats.dbHost}</div>
+
+                <div style="border-top: 1px solid var(--border-color); padding-top: 16px;">
+                    <h3 style="font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600; margin-bottom: 10px;">Database Diagnostics</h3>
+                    <table class="status-table" style="margin-bottom: 16px;">
+                        <tbody>
+                            <tr>
+                                <td style="font-weight: 500; padding: 6px 0;">Database Cluster</td>
+                                <td class="monospace" style="text-align: right; padding: 6px 0; font-size: 11px; word-break: break-all; color: var(--text-muted);">${stats.dbHost}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 500; padding: 6px 0;">Database Name</td>
+                                <td class="monospace" style="text-align: right; padding: 6px 0; color: var(--text-muted);">${stats.dbName}</td>
+                            </tr>
+                            <tr>
+                                <td style="font-weight: 500; padding: 6px 0;">Latency</td>
+                                <td class="monospace" id="latency-value" style="text-align: right; padding: 6px 0; font-weight: 600; color: var(--text-muted);">Measuring...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <button class="btn-simple" id="btn-ping-db" style="width: 100%; justify-content: center;">
+                        Run Latency Check
+                    </button>
                 </div>
             </div>
+        </section>
 
-            <div class="endpoints">
-                <h2 class="endpoints-title">Available Routes</h2>
-                
-                <div class="endpoint-row">
-                    <div class="endpoint-path">
-                        <span class="method-badge method-get">GET</span>
-                        <span class="path-text">/</span>
-                    </div>
-                    <span style="font-size: 13px; color: var(--text-muted);">API dashboard (this page)</span>
-                </div>
-
-                <div class="endpoint-row">
-                    <div class="endpoint-path">
-                        <span class="method-badge method-get">GET</span>
-                        <span class="path-text">/api/health</span>
-                    </div>
-                    <a href="/api/health" class="btn-link" target="_blank">Test JSON ↗</a>
-                </div>
-
-                <div class="endpoint-row">
-                    <div class="endpoint-path">
-                        <span class="method-badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.25);">POST</span>
-                        <span class="path-text">/api/orders</span>
-                    </div>
-                    <span style="font-size: 13px; color: var(--text-muted);">Place a new order</span>
-                </div>
-
-                <div class="endpoint-row">
-                    <div class="endpoint-path">
-                        <span class="method-badge method-get">GET</span>
-                        <span class="path-text">/api/orders</span>
-                    </div>
-                    <a href="/api/orders" class="btn-link" target="_blank">View All ↗</a>
-                </div>
+        <!-- API ROUTES GATEWAY -->
+        <section class="panel">
+            <h2 class="panel-title">Operational Routes</h2>
+            <div class="table-wrapper">
+                <table class="status-table">
+                    <thead>
+                        <tr>
+                            <th>Method</th>
+                            <th>Path</th>
+                            <th>Description</th>
+                            <th>Verify</th>
+                            <th>Response</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="tag tag-info">GET</span></td>
+                            <td class="monospace" style="font-weight: 500;">/</td>
+                            <td>Status portal view dashboard</td>
+                            <td><a href="/" class="btn-simple" style="padding: 3px 8px;">Visit</a></td>
+                            <td class="monospace" style="color: var(--primary);">200 OK</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tag tag-info">GET</span></td>
+                            <td class="monospace" style="font-weight: 500;">/api/health</td>
+                            <td>Telemetry JSON Healthcheck</td>
+                            <td><button class="btn-simple btn-ping-route" data-route="/api/health" style="padding: 3px 8px;">Test</button></td>
+                            <td class="monospace route-latency-display" data-route="/api/health">--</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tag tag-success">POST</span></td>
+                            <td class="monospace" style="font-weight: 500;">/api/orders</td>
+                            <td>Place checkout order confirmation</td>
+                            <td><span style="color: var(--text-muted); font-size: 11px;">Auth / Payload required</span></td>
+                            <td class="monospace">--</td>
+                        </tr>
+                        <tr>
+                            <td><span class="tag tag-info">GET</span></td>
+                            <td class="monospace" style="font-weight: 500;">/api/orders</td>
+                            <td>Retrieve all orders dashboard dataset</td>
+                            <td><button class="btn-simple btn-ping-route" data-route="/api/orders" style="padding: 3px 8px;">Test</button></td>
+                            <td class="monospace route-latency-display" data-route="/api/orders">--</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-        </div>
-        <div class="footer">
-            Hope Foundation Gadhinglaj Pvt. Ltd. &copy; ${new Date().getFullYear()} &bull; Built with Node.js & Express
-        </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="footer">
+            <div>
+                <strong>Hope Foundation Gadhinglaj Pvt. Ltd.</strong> &copy; ${new Date().getFullYear()}
+            </div>
+            <div style="font-size: 11px;">
+                Node ${process.version} &bull; Express 4.19 &bull; Mongoose 8.4
+            </div>
+        </footer>
     </div>
+
+    <!-- SCRIPTS -->
+    <script>
+        const btnPingDb = document.getElementById('btn-ping-db');
+        const latencyValue = document.getElementById('latency-value');
+
+        const testDbPing = async () => {
+            latencyValue.innerText = 'Pinging...';
+            latencyValue.style.color = 'var(--text-muted)';
+            const start = Date.now();
+            try {
+                const response = await fetch('/api/db-ping');
+                const data = await response.json();
+                const latency = Date.now() - start;
+                
+                if (data.success) {
+                    const finalMs = data.latencyMs || latency;
+                    latencyValue.innerText = finalMs + ' ms';
+                    if (finalMs < 100) {
+                        latencyValue.style.color = 'var(--primary)';
+                    } else if (finalMs < 300) {
+                        latencyValue.style.color = 'var(--warning)';
+                    } else {
+                        latencyValue.style.color = 'var(--danger)';
+                    }
+                } else {
+                    throw new Error('Ping failed');
+                }
+            } catch (err) {
+                latencyValue.innerText = 'Error';
+                latencyValue.style.color = 'var(--danger)';
+            }
+        };
+
+        // Route latency check
+        const routePingButtons = document.querySelectorAll('.btn-ping-route');
+        routePingButtons.forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const route = btn.dataset.route;
+                const display = document.querySelector(\`.route-latency-display[data-route="\${route}"]\`);
+                display.innerText = 'Testing...';
+                display.style.color = 'var(--text-muted)';
+                
+                const start = Date.now();
+                try {
+                    const response = await fetch(route);
+                    const duration = Date.now() - start;
+                    
+                    if (response.ok) {
+                        display.innerText = duration + ' ms';
+                        display.style.color = duration < 120 ? 'var(--primary)' : 'var(--warning)';
+                    } else {
+                        display.innerText = \`\${response.status} Err\`;
+                        display.style.color = 'var(--danger)';
+                    }
+                } catch (e) {
+                    display.innerText = 'Err';
+                    display.style.color = 'var(--danger)';
+                }
+            });
+        });
+
+        // Initialize DB latency check
+        testDbPing();
+        btnPingDb.addEventListener('click', testDbPing);
+    </script>
 </body>
 </html>
   `;
