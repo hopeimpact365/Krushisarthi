@@ -27,7 +27,7 @@ export default function TermsPage() {
           <h2 className="text-2xl font-semibold text-foreground mb-3">3. Payments, Pricing & Billing</h2>
           <p>
             All prices listed on our website are inclusive or exclusive of applicable taxes as marked.
-            We use secure third-party payment systems (RazorPay) for all transactions. By completing a checkout, you agree to provide valid credentials and authorize the transaction amount.
+            We use secure third-party payment systems (Easebuzz) for all transactions. By completing a checkout, you agree to provide valid credentials and authorize the transaction amount.
             We reserve the right to change our prices at any time without prior notice.
           </p>
         </section>

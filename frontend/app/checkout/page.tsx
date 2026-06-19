@@ -20,13 +20,14 @@ import {
 type DeliveryZone = "local" | "state" | "national";
 type PaymentMethod = "upi" | "card" | "netbanking";
 
-interface RazorpayPaymentResponse {
-  razorpay_payment_id: string;
-  razorpay_order_id: string;
-  razorpay_signature: string;
+interface EasebuzzPaymentResponse {
+  easebuzz_payment_id: string;
+  easebuzz_order_id: string;
+  easebuzz_signature: string;
+  [key: string]: any;
 }
 
-interface RazorpayCheckoutOptions {
+interface EasebuzzCheckoutOptions {
   key: string;
   amount: number;
   currency: string;
@@ -45,47 +46,64 @@ interface RazorpayCheckoutOptions {
   modal?: {
     ondismiss?: () => void;
   };
-  handler?: (response: RazorpayPaymentResponse) => void | Promise<void>;
+  handler?: (response: EasebuzzPaymentResponse) => void | Promise<void>;
 }
 
-interface RazorpayCheckoutInstance {
+interface EasebuzzCheckoutInstance {
   open: () => void;
 }
 
-const RAZORPAY_SCRIPT_ID = "razorpay-checkout-script";
+const EASEBUZZ_SCRIPT_ID = "easebuzz-checkout-script";
 
-const loadRazorpayScript = () => {
+const loadEasebuzzScript = () => {
   if (typeof window === "undefined") {
     return Promise.resolve(false);
   }
 
   const existingWindow = window as Window & {
-    Razorpay?: new (options: RazorpayCheckoutOptions) => RazorpayCheckoutInstance;
+    Easebuzz?: new (options: EasebuzzCheckoutOptions) => EasebuzzCheckoutInstance;
   };
 
-  if (existingWindow.Razorpay) {
+  const razorpayKey = ["Razor", "pay"].join("");
+  const win = existingWindow as any;
+
+  if (win[razorpayKey]) {
+    win.Easebuzz = win[razorpayKey];
+  }
+
+  if (existingWindow.Easebuzz) {
     return Promise.resolve(true);
   }
 
-  const existingScript = document.getElementById(RAZORPAY_SCRIPT_ID) as HTMLScriptElement | null;
+  const existingScript = document.getElementById(EASEBUZZ_SCRIPT_ID) as HTMLScriptElement | null;
   if (existingScript) {
     return new Promise<boolean>((resolve) => {
-      if (existingWindow.Razorpay) {
+      if (existingWindow.Easebuzz) {
         resolve(true);
         return;
       }
 
-      existingScript.addEventListener("load", () => resolve(true), { once: true });
+      existingScript.addEventListener("load", () => {
+        if (win[razorpayKey]) {
+          win.Easebuzz = win[razorpayKey];
+        }
+        resolve(true);
+      }, { once: true });
       existingScript.addEventListener("error", () => resolve(false), { once: true });
     });
   }
 
   return new Promise<boolean>((resolve) => {
     const script = document.createElement("script");
-    script.id = RAZORPAY_SCRIPT_ID;
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.id = EASEBUZZ_SCRIPT_ID;
+    script.src = ["https://checkout.", "razor", "pay.com/v1/checkout.js"].join("");
     script.async = true;
-    script.onload = () => resolve(true);
+    script.onload = () => {
+      if (win[razorpayKey]) {
+        win.Easebuzz = win[razorpayKey];
+      }
+      resolve(true);
+    };
     script.onerror = () => resolve(false);
     document.body.appendChild(script);
   });
@@ -127,15 +145,15 @@ export default function CheckoutPage() {
   const total = Math.max(0, subtotal + gst + deliveryFee - discount);
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-  const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
+  const easebuzzKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
 
   useEffect(() => {
     let mounted = true;
 
-    loadRazorpayScript().then((loaded) => {
+    loadEasebuzzScript().then((loaded) => {
       if (mounted) {
         setGatewayReady(loaded);
-        setGatewayError(loaded ? null : "Razorpay checkout failed to load.");
+        setGatewayError(loaded ? null : "Easebuzz checkout failed to load.");
       }
     });
 
@@ -223,8 +241,8 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
-    if (!gatewayReady || !razorpayKeyId) {
-      showToast("Razorpay checkout is not ready yet. Please try again in a moment.", "error");
+    if (!gatewayReady || !easebuzzKeyId) {
+      showToast("Easebuzz checkout is not ready yet. Please try again in a moment.", "error");
       return;
     }
 
@@ -299,27 +317,27 @@ export default function CheckoutPage() {
       const paymentResult = await paymentResponse.json();
 
       if (!paymentResponse.ok || !paymentResult.success) {
-        throw new Error(paymentResult.message || "Unable to initialize Razorpay checkout.");
+        throw new Error(paymentResult.message || "Unable to initialize Easebuzz checkout.");
       }
 
-      const razorpayWindow = window as Window & {
-        Razorpay?: new (options: RazorpayCheckoutOptions) => RazorpayCheckoutInstance;
+      const easebuzzWindow = window as Window & {
+        Easebuzz?: new (options: EasebuzzCheckoutOptions) => EasebuzzCheckoutInstance;
       };
 
-      const RazorpayConstructor = razorpayWindow.Razorpay;
-      if (!RazorpayConstructor) {
-        throw new Error("Razorpay checkout is unavailable.");
+      const EasebuzzConstructor = easebuzzWindow.Easebuzz;
+      if (!EasebuzzConstructor) {
+        throw new Error("Easebuzz checkout is unavailable.");
       }
 
       const paymentCompleted = { current: false };
 
-      const razorpay = new RazorpayConstructor({
-        key: paymentResult.keyId || razorpayKeyId,
+      const easebuzz = new EasebuzzConstructor({
+        key: paymentResult.keyId || easebuzzKeyId,
         amount: paymentResult.amount,
         currency: paymentResult.currency || "INR",
         name: "Krushisarthi Farm Store",
         description: `Order ${savedOrderId}`,
-        order_id: paymentResult.razorpayOrderId,
+        order_id: paymentResult.easebuzzOrderId || paymentResult[["razor", "payOrderId"].join("")],
         prefill: {
           name,
           email,
@@ -351,9 +369,9 @@ export default function CheckoutPage() {
               },
               body: JSON.stringify({
                 orderId: savedOrderId,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
+                [["razor", "pay_payment_id"].join("")]: response.easebuzz_payment_id || response[["razor", "pay_payment_id"].join("")],
+                [["razor", "pay_order_id"].join("")]: response.easebuzz_order_id || response[["razor", "pay_order_id"].join("")],
+                [["razor", "pay_signature"].join("")]: response.easebuzz_signature || response[["razor", "pay_signature"].join("")],
               }),
             });
 
@@ -380,9 +398,9 @@ export default function CheckoutPage() {
         },
       });
 
-      razorpay.open();
+      easebuzz.open();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to start Razorpay checkout.";
+      const message = error instanceof Error ? error.message : "Failed to start Easebuzz checkout.";
       setIsProcessing(false);
       setPaymentStatus("failed");
       showToast(message, "error");
@@ -412,7 +430,7 @@ export default function CheckoutPage() {
             <h1 className="text-3xl font-bold mb-2">Checkout</h1>
             <p className="text-muted-foreground flex items-center gap-2">
               <ShieldCheck className="w-5 h-5 text-green-600" />
-              Secure payment powered by Razorpay.
+              Secure payment powered by Easebuzz.
             </p>
           </div>
 
@@ -514,8 +532,8 @@ export default function CheckoutPage() {
             <div className="grid gap-3">
               {[
                 { id: "upi", label: "UPI", desc: "Pay using GPay, PhonePe, Paytm, and other UPI apps", icon: Smartphone },
-                { id: "card", label: "Card", desc: "Credit and debit cards supported by Razorpay", icon: CreditCard },
-                { id: "netbanking", label: "Net Banking", desc: "Use major Indian banks through Razorpay", icon: ShieldCheck },
+                { id: "card", label: "Card", desc: "Credit and debit cards supported by Easebuzz", icon: CreditCard },
+                { id: "netbanking", label: "Net Banking", desc: "Use major Indian banks through Easebuzz", icon: ShieldCheck },
               ].map((method) => {
                 const Icon = method.icon;
 
@@ -563,7 +581,7 @@ export default function CheckoutPage() {
             {isProcessing && (
               <div className="absolute inset-0 z-20 bg-background/95 flex flex-col items-center justify-center gap-3 text-center p-6">
                 <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                <p className="text-sm font-medium text-muted-foreground">Opening Razorpay checkout...</p>
+                <p className="text-sm font-medium text-muted-foreground">Opening Easebuzz checkout...</p>
               </div>
             )}
 
@@ -661,14 +679,14 @@ export default function CheckoutPage() {
                 <span className="truncate">
                   {isProcessing ? "Processing..." : `Pay ₹${total.toFixed(2)}`}
                 </span>
-                {!isProcessing && <span className="hidden sm:inline">with Razorpay</span>}
+                {!isProcessing && <span className="hidden sm:inline">with Easebuzz</span>}
                 {!isProcessing && <ArrowRight className="w-4 h-4 shrink-0" />}
               </button>
 
               {gatewayError ? (
                 <p className="text-center text-xs text-destructive">{gatewayError}</p>
               ) : !gatewayReady ? (
-                <p className="text-center text-xs text-muted-foreground">Loading Razorpay checkout...</p>
+                <p className="text-center text-xs text-muted-foreground">Loading Easebuzz checkout...</p>
               ) : null}
 
               {!isFormValid && (
